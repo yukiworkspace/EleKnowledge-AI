@@ -204,11 +204,11 @@ Resources:
                   - !Sub 
                     - arn:aws:s3:::${BucketName}
                     - BucketName:
-                        Fn::ImportValue: !Sub ${Phase1StackName}-DocumentsBucketName
+                        Fn::ImportValue: !Sub ${ProjectName}-${Environment}-DocumentsBucketName
                   - !Sub 
                     - arn:aws:s3:::${BucketName}/*
                     - BucketName:
-                        Fn::ImportValue: !Sub ${Phase1StackName}-DocumentsBucketName
+                        Fn::ImportValue: !Sub ${ProjectName}-${Environment}-DocumentsBucketName
 
   # ============================================================================
   # Lambda Functions - RAG
@@ -303,7 +303,7 @@ Resources:
         Authorizers:
           CognitoAuthorizer:
             UserPoolArn:
-              Fn::ImportValue: !Sub ${Phase1StackName}-CognitoUserPoolArn
+              Fn::ImportValue: !Sub ${ProjectName}-${Environment}-CognitoUserPoolArn
       GatewayResponses:
         DEFAULT_4XX:
           ResponseParameters:
@@ -341,7 +341,7 @@ Resources:
         Authorizers:
           CognitoAuthorizer:
             UserPoolArn:
-              Fn::ImportValue: !Sub ${Phase1StackName}-CognitoUserPoolArn
+              Fn::ImportValue: !Sub ${ProjectName}-${Environment}-CognitoUserPoolArn
       GatewayResponses:
         DEFAULT_4XX:
           ResponseParameters:
