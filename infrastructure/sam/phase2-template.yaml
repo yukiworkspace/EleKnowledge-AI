@@ -1,0 +1,438 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  EleKnowledge-AI Phase 2: RAG Chat System
+  Knowledge Base, RAG Lambda, Chat Management, OpenSearch Serverless
+
+Parameters:
+  Environment:
+    Type: String
+    Default: development
+    AllowedValues:
+      - development
+      - production
+    Description: Environment name
+  
+  ProjectName:
+    Type: String
+    Default: EleKnowledge-AI
+    Description: Project name
+  
+  Phase1StackName:
+    Type: String
+    Default: EleKnowledge-AI-development-phase1
+    Description: Phase 1 CloudFormation stack name for importing values
+
+Globals:
+  Function:
+    Timeout: 300
+    MemorySize: 1024
+    Runtime: python3.13
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        ENVIRONMENT: !Ref Environment
+        PROJECT_NAME: !Ref ProjectName
+    Tags:
+      Project: !Ref ProjectName
+      Environment: !Ref Environment
+      ManagedBy: SAM
+      Phase: "2"
+
+Resources:
+  # ============================================================================
+  # OpenSearch Serverless Collection (Vector Database)
+  # ============================================================================
+  KnowledgeBaseCollection:
+    Type: AWS::OpenSearchServerless::Collection
+    Properties:
+      Name: !Sub ${ProjectName}-${Environment}-kb
+      Type: VECTORSEARCH
+      Description: Vector database for EleKnowledge-AI Knowledge Base
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Phase
+          Value: "2"
+    DependsOn: KnowledgeBaseEncryptionPolicy
+  
+  # OpenSearch Serverless Security Policy
+  KnowledgeBaseEncryptionPolicy:
+    Type: AWS::OpenSearchServerless::SecurityPolicy
+    Properties:
+      Name: !Sub ${ProjectName}-${Environment}-kb-encryption
+      Type: encryption
+      Policy: !Sub |
+        {
+          "Rules": [
+            {
+              "ResourceType": "collection",
+              "Resource": [
+                "collection/${ProjectName}-${Environment}-kb"
+              ]
+            }
+          ],
+          "AWSOwnedKey": true
+        }
+  
+  KnowledgeBaseNetworkPolicy:
+    Type: AWS::OpenSearchServerless::SecurityPolicy
+    Properties:
+      Name: !Sub ${ProjectName}-${Environment}-kb-network
+      Type: network
+      Policy: !Sub |
+        [
+          {
+            "Rules": [
+              {
+                "ResourceType": "collection",
+                "Resource": [
+                  "collection/${ProjectName}-${Environment}-kb"
+                ]
+              },
+              {
+                "ResourceType": "dashboard",
+                "Resource": [
+                  "collection/${ProjectName}-${Environment}-kb"
+                ]
+              }
+            ],
+            "AllowFromPublic": true
+          }
+        ]
+  
+  # ============================================================================
+  # Bedrock Knowledge Base
+  # ============================================================================
+  KnowledgeBaseRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-${Environment}-kb-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: bedrock.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonBedrockFullAccess
+      Policies:
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub 
+                    - arn:aws:s3:::${BucketName}
+                    - BucketName:
+                        Fn::ImportValue: !Sub ${Phase1StackName}-DocumentsBucketName
+                  - !Sub 
+                    - arn:aws:s3:::${BucketName}/*
+                    - BucketName:
+                        Fn::ImportValue: !Sub ${Phase1StackName}-DocumentsBucketName
+        - PolicyName: OpenSearchAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - aoss:APIAccessAll
+                Resource: !GetAtt KnowledgeBaseCollection.Arn
+
+  # ============================================================================
+  # Lambda Execution Role (Phase 2)
+  # ============================================================================
+  RagLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-${Environment}-rag-lambda-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: BedrockAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:Retrieve
+                  - bedrock:RetrieveAndGenerate
+                Resource: '*'
+        - PolicyName: DynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource:
+                  - Fn::ImportValue: !Sub ${Phase1StackName}-ChatLogsTableArn
+                  - !Sub 
+                    - ${TableArn}/index/*
+                    - TableArn:
+                        Fn::ImportValue: !Sub ${Phase1StackName}-ChatLogsTableArn
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub 
+                    - arn:aws:s3:::${BucketName}
+                    - BucketName:
+                        Fn::ImportValue: !Sub ${Phase1StackName}-DocumentsBucketName
+                  - !Sub 
+                    - arn:aws:s3:::${BucketName}/*
+                    - BucketName:
+                        Fn::ImportValue: !Sub ${Phase1StackName}-DocumentsBucketName
+
+  # ============================================================================
+  # Lambda Functions - RAG
+  # ============================================================================
+  RagFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${ProjectName}-${Environment}-rag
+      CodeUri: ../../lambda/rag/rag-function/
+      Handler: app.lambda_handler
+      Description: RAG query processing with Knowledge Base and Claude 4
+      Role: !GetAtt RagLambdaRole.Arn
+      Timeout: 300
+      MemorySize: 1024
+      Environment:
+        Variables:
+          KNOWLEDGE_BASE_ID: !Ref KnowledgeBaseId
+          BEDROCK_MODEL_ID: anthropic.claude-sonnet-4-20250514-v1:0
+          CHATLOGS_TABLE:
+            Fn::ImportValue: !Sub ${Phase1StackName}-ChatLogsTableName
+          DOCUMENTS_BUCKET:
+            Fn::ImportValue: !Sub ${Phase1StackName}-DocumentsBucketName
+      Events:
+        RagApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref RagApi
+            Path: /rag/query
+            Method: POST
+  
+  ChatManagementFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${ProjectName}-${Environment}-chat-management
+      CodeUri: ../../lambda/chat/chat-management/
+      Handler: app.lambda_handler
+      Description: Chat session and message management
+      Role: !GetAtt RagLambdaRole.Arn
+      Timeout: 30
+      MemorySize: 512
+      Environment:
+        Variables:
+          CHATLOGS_TABLE:
+            Fn::ImportValue: !Sub ${Phase1StackName}-ChatLogsTableName
+      Events:
+        ListSessions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ChatApi
+            Path: /chat/sessions
+            Method: GET
+        GetSession:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ChatApi
+            Path: /chat/sessions/{sessionId}
+            Method: GET
+        DeleteSession:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ChatApi
+            Path: /chat/sessions/{sessionId}
+            Method: DELETE
+        GetMessages:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ChatApi
+            Path: /chat/sessions/{sessionId}/messages
+            Method: GET
+        UpdateFeedback:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ChatApi
+            Path: /chat/messages/{messageId}/feedback
+            Method: PUT
+
+  # ============================================================================
+  # API Gateway
+  # ============================================================================
+  RagApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub ${ProjectName}-${Environment}-rag-api
+      StageName: !Ref Environment
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization'"
+        AllowOrigin: "'*'"
+        MaxAge: "'3600'"
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn:
+              Fn::ImportValue: !Sub ${Phase1StackName}-CognitoUserPoolArn
+      GatewayResponses:
+        DEFAULT_4XX:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: "'*'"
+        DEFAULT_5XX:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: "'*'"
+      MethodSettings:
+        - ResourcePath: "/*"
+          HttpMethod: "*"
+          ThrottlingBurstLimit: 20
+          ThrottlingRateLimit: 5
+          LoggingLevel: INFO
+          DataTraceEnabled: true
+          MetricsEnabled: true
+      Tags:
+        Project: !Ref ProjectName
+        Environment: !Ref Environment
+        Phase: "2"
+  
+  ChatApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub ${ProjectName}-${Environment}-chat-api
+      StageName: !Ref Environment
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization'"
+        AllowOrigin: "'*'"
+        MaxAge: "'3600'"
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn:
+              Fn::ImportValue: !Sub ${Phase1StackName}-CognitoUserPoolArn
+      GatewayResponses:
+        DEFAULT_4XX:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: "'*'"
+        DEFAULT_5XX:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: "'*'"
+      MethodSettings:
+        - ResourcePath: "/*"
+          HttpMethod: "*"
+          ThrottlingBurstLimit: 50
+          ThrottlingRateLimit: 10
+          LoggingLevel: INFO
+          DataTraceEnabled: true
+          MetricsEnabled: true
+      Tags:
+        Project: !Ref ProjectName
+        Environment: !Ref Environment
+        Phase: "2"
+
+  # ============================================================================
+  # CloudWatch Logs
+  # ============================================================================
+  RagApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/apigateway/${ProjectName}-${Environment}-rag-api
+      RetentionInDays: 30
+  
+  ChatApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/apigateway/${ProjectName}-${Environment}-chat-api
+      RetentionInDays: 30
+
+  # ============================================================================
+  # Parameters (for Knowledge Base ID)
+  # ============================================================================
+  KnowledgeBaseId:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${ProjectName}/${Environment}/knowledge-base-id
+      Type: String
+      Value: PLACEHOLDER
+      Description: Knowledge Base ID (update after manual creation)
+
+Outputs:
+  # API Gateway
+  RagApiUrl:
+    Description: RAG API Gateway URL
+    Value: !Sub https://${RagApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}
+    Export:
+      Name: !Sub ${ProjectName}-${Environment}-RagApiUrl
+  
+  ChatApiUrl:
+    Description: Chat Management API Gateway URL
+    Value: !Sub https://${ChatApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}
+    Export:
+      Name: !Sub ${ProjectName}-${Environment}-ChatApiUrl
+  
+  # Lambda Functions
+  RagFunctionArn:
+    Description: RAG Lambda Function ARN
+    Value: !GetAtt RagFunction.Arn
+    Export:
+      Name: !Sub ${ProjectName}-${Environment}-RagFunctionArn
+  
+  ChatManagementFunctionArn:
+    Description: Chat Management Lambda Function ARN
+    Value: !GetAtt ChatManagementFunction.Arn
+    Export:
+      Name: !Sub ${ProjectName}-${Environment}-ChatManagementFunctionArn
+  
+  # OpenSearch Serverless
+  KnowledgeBaseCollectionArn:
+    Description: OpenSearch Serverless Collection ARN
+    Value: !GetAtt KnowledgeBaseCollection.Arn
+    Export:
+      Name: !Sub ${ProjectName}-${Environment}-KnowledgeBaseCollectionArn
+  
+  KnowledgeBaseCollectionEndpoint:
+    Description: OpenSearch Serverless Collection Endpoint
+    Value: !GetAtt KnowledgeBaseCollection.CollectionEndpoint
+    Export:
+      Name: !Sub ${ProjectName}-${Environment}-KnowledgeBaseCollectionEndpoint
+  
+  # IAM Roles
+  KnowledgeBaseRoleArn:
+    Description: Knowledge Base IAM Role ARN
+    Value: !GetAtt KnowledgeBaseRole.Arn
+    Export:
+      Name: !Sub ${ProjectName}-${Environment}-KnowledgeBaseRoleArn
