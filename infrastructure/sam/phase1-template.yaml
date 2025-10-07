@@ -1,0 +1,540 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  EleKnowledge-AI Phase 1: 基盤整備
+  認証システム、DynamoDB、S3、Lambda、API Gateway
+
+Parameters:
+  Environment:
+    Type: String
+    Default: development
+    AllowedValues:
+      - development
+      - production
+    Description: Environment name
+  
+  ProjectName:
+    Type: String
+    Default: EleKnowledge-AI
+    Description: Project name for resource tagging
+  
+  AllowedIPCIDR:
+    Type: String
+    Default: 192.168.28.0/24
+    Description: Allowed IP CIDR for access
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: python3.13
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        ENVIRONMENT: !Ref Environment
+        PROJECT_NAME: !Ref ProjectName
+        COGNITO_USER_POOL_ID: !Ref CognitoUserPool
+        COGNITO_CLIENT_ID: !Ref CognitoUserPoolClient
+        DYNAMODB_USERS_TABLE: !Ref UsersTable
+        DYNAMODB_CHATLOGS_TABLE: !Ref ChatLogsTable
+    Tags:
+      Project: !Ref ProjectName
+      Environment: !Ref Environment
+      ManagedBy: SAM
+      Phase: "1"
+
+Resources:
+  # ============================================================================
+  # Amazon Cognito User Pool
+  # ============================================================================
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub ${ProjectName}-${Environment}-user-pool
+      UsernameAttributes:
+        - email
+      UsernameConfiguration:
+        CaseSensitive: false
+      AutoVerifiedAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          TemporaryPasswordValidityDays: 7
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      MfaConfiguration: OPTIONAL
+      EnabledMfas:
+        - SOFTWARE_TOKEN_MFA
+      UserAttributeUpdateSettings:
+        AttributesRequireVerificationBeforeUpdate:
+          - email
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Required: true
+          Mutable: false
+        - Name: name
+          AttributeDataType: String
+          Required: false
+          Mutable: true
+      EmailConfiguration:
+        EmailSendingAccount: COGNITO_DEFAULT
+      UserPoolTags:
+        Project: !Ref ProjectName
+        Environment: !Ref Environment
+        ManagedBy: SAM
+        Phase: "1"
+
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub ${ProjectName}-${Environment}-client
+      UserPoolId: !Ref CognitoUserPool
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_SRP_AUTH
+      PreventUserExistenceErrors: ENABLED
+      RefreshTokenValidity: 30
+      AccessTokenValidity: 60
+      IdTokenValidity: 60
+      TokenValidityUnits:
+        RefreshToken: days
+        AccessToken: minutes
+        IdToken: minutes
+      ReadAttributes:
+        - email
+        - name
+        - email_verified
+      WriteAttributes:
+        - email
+        - name
+
+  # ============================================================================
+  # DynamoDB Tables
+  # ============================================================================
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${ProjectName}-${Environment}-users
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: email
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: email-index
+          KeySchema:
+            - AttributeName: email
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: ManagedBy
+          Value: SAM
+        - Key: Phase
+          Value: "1"
+
+  ChatLogsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${ProjectName}-${Environment}-chatlogs
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: sessionId
+          AttributeType: S
+        - AttributeName: messageId
+          AttributeType: S
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: sessionId
+          KeyType: HASH
+        - AttributeName: messageId
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: userId-timestamp-index
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+            - AttributeName: timestamp
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TimeToLiveSpecification:
+        Enabled: true
+        AttributeName: ttl
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: ManagedBy
+          Value: SAM
+        - Key: Phase
+          Value: "1"
+
+  # ============================================================================
+  # S3 Buckets
+  # ============================================================================
+  DocumentsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub eleknowledge-ai-${Environment}-documents
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: MoveToGlacierAfter30Days
+            Status: Enabled
+            Transitions:
+              - TransitionInDays: 30
+                StorageClass: GLACIER
+          - Id: MoveToDeepArchiveAfter90Days
+            Status: Enabled
+            Transitions:
+              - TransitionInDays: 90
+                StorageClass: DEEP_ARCHIVE
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: ManagedBy
+          Value: SAM
+        - Key: Phase
+          Value: "1"
+
+  UploadsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub eleknowledge-ai-${Environment}-uploads
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteTempFilesAfter1Day
+            Status: Enabled
+            ExpirationInDays: 1
+            Prefix: tmp/
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: ManagedBy
+          Value: SAM
+        - Key: Phase
+          Value: "1"
+
+  # ============================================================================
+  # IAM Roles
+  # ============================================================================
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-${Environment}-lambda-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+      Policies:
+        - PolicyName: DynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource:
+                  - !GetAtt UsersTable.Arn
+                  - !Sub ${UsersTable.Arn}/index/*
+                  - !GetAtt ChatLogsTable.Arn
+                  - !Sub ${ChatLogsTable.Arn}/index/*
+        - PolicyName: CognitoAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cognito-idp:AdminCreateUser
+                  - cognito-idp:AdminGetUser
+                  - cognito-idp:AdminSetUserPassword
+                  - cognito-idp:AdminUpdateUserAttributes
+                  - cognito-idp:AdminDeleteUser
+                  - cognito-idp:ListUsers
+                Resource:
+                  - !GetAtt CognitoUserPool.Arn
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt DocumentsBucket.Arn
+                  - !Sub ${DocumentsBucket.Arn}/*
+                  - !GetAtt UploadsBucket.Arn
+                  - !Sub ${UploadsBucket.Arn}/*
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: ManagedBy
+          Value: SAM
+        - Key: Phase
+          Value: "1"
+
+  # ============================================================================
+  # Lambda Functions - 認証
+  # ============================================================================
+  SignupFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${ProjectName}-${Environment}-signup
+      CodeUri: ../../lambda/auth/signup/
+      Handler: app.lambda_handler
+      Description: User signup function
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          COGNITO_USER_POOL_ID: !Ref CognitoUserPool
+          COGNITO_CLIENT_ID: !Ref CognitoUserPoolClient
+          USERS_TABLE: !Ref UsersTable
+      Events:
+        SignupApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AuthApi
+            Path: /auth/signup
+            Method: POST
+
+  LoginFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${ProjectName}-${Environment}-login
+      CodeUri: ../../lambda/auth/login/
+      Handler: app.lambda_handler
+      Description: User login function
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          COGNITO_USER_POOL_ID: !Ref CognitoUserPool
+          COGNITO_CLIENT_ID: !Ref CognitoUserPoolClient
+          USERS_TABLE: !Ref UsersTable
+      Events:
+        LoginApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AuthApi
+            Path: /auth/login
+            Method: POST
+
+  VerifyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${ProjectName}-${Environment}-verify
+      CodeUri: ../../lambda/auth/verify/
+      Handler: app.lambda_handler
+      Description: Email verification function
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          COGNITO_USER_POOL_ID: !Ref CognitoUserPool
+          COGNITO_CLIENT_ID: !Ref CognitoUserPoolClient
+      Events:
+        VerifyApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AuthApi
+            Path: /auth/verify
+            Method: POST
+
+  # ============================================================================
+  # API Gateway
+  # ============================================================================
+  AuthApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub ${ProjectName}-${Environment}-auth-api
+      StageName: !Ref Environment
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization'"
+        AllowOrigin: "'*'"
+        MaxAge: "'3600'"
+      GatewayResponses:
+        DEFAULT_4XX:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: "'*'"
+        DEFAULT_5XX:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: "'*'"
+      MethodSettings:
+        - ResourcePath: "/*"
+          HttpMethod: "*"
+          ThrottlingBurstLimit: 50
+          ThrottlingRateLimit: 10
+          LoggingLevel: INFO
+          DataTraceEnabled: true
+          MetricsEnabled: true
+      Tags:
+        Project: !Ref ProjectName
+        Environment: !Ref Environment
+        ManagedBy: SAM
+        Phase: "1"
+
+  # ============================================================================
+  # CloudWatch Logs
+  # ============================================================================
+  ApiGatewayLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/apigateway/${ProjectName}-${Environment}-auth-api
+      RetentionInDays: 30
+
+Outputs:
+  # Cognito
+  CognitoUserPoolId:
+    Description: Cognito User Pool ID
+    Value: !Ref CognitoUserPool
+    Export:
+      Name: !Sub ${ProjectName}-${Environment}-CognitoUserPoolId
+  
+  CognitoUserPoolArn:
+    Description: Cognito User Pool ARN
+    Value: !GetAtt CognitoUserPool.Arn
+    Export:
+      Name: !Sub ${ProjectName}-${Environment}-CognitoUserPoolArn
+  
+  CognitoClientId:
+    Description: Cognito User Pool Client ID
+    Value: !Ref CognitoUserPoolClient
+    Export:
+      Name: !Sub ${ProjectName}-${Environment}-CognitoClientId
+
+  # DynamoDB
+  UsersTableName:
+    Description: Users Table Name
+    Value: !Ref UsersTable
+    Export:
+      Name: !Sub ${ProjectName}-${Environment}-UsersTableName
+  
+  ChatLogsTableName:
+    Description: Chat Logs Table Name
+    Value: !Ref ChatLogsTable
+    Export:
+      Name: !Sub ${ProjectName}-${Environment}-ChatLogsTableName
+
+  # S3
+  DocumentsBucketName:
+    Description: Documents Bucket Name
+    Value: !Ref DocumentsBucket
+    Export:
+      Name: !Sub ${ProjectName}-${Environment}-DocumentsBucketName
+  
+  UploadsBucketName:
+    Description: Uploads Bucket Name
+    Value: !Ref UploadsBucket
+    Export:
+      Name: !Sub ${ProjectName}-${Environment}-UploadsBucketName
+
+  # API Gateway
+  AuthApiUrl:
+    Description: Auth API Gateway URL
+    Value: !Sub https://${AuthApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}
+    Export:
+      Name: !Sub ${ProjectName}-${Environment}-AuthApiUrl
+  
+  AuthApiId:
+    Description: Auth API Gateway ID
+    Value: !Ref AuthApi
+    Export:
+      Name: !Sub ${ProjectName}-${Environment}-AuthApiId
+
+  # Lambda
+  SignupFunctionArn:
+    Description: Signup Lambda Function ARN
+    Value: !GetAtt SignupFunction.Arn
+    Export:
+      Name: !Sub ${ProjectName}-${Environment}-SignupFunctionArn
+  
+  LoginFunctionArn:
+    Description: Login Lambda Function ARN
+    Value: !GetAtt LoginFunction.Arn
+    Export:
+      Name: !Sub ${ProjectName}-${Environment}-LoginFunctionArn
+  
+  VerifyFunctionArn:
+    Description: Verify Lambda Function ARN
+    Value: !GetAtt VerifyFunction.Arn
+    Export:
+      Name: !Sub ${ProjectName}-${Environment}-VerifyFunctionArn
+
+  # IAM
+  LambdaExecutionRoleArn:
+    Description: Lambda Execution Role ARN
+    Value: !GetAtt LambdaExecutionRole.Arn
+    Export:
+      Name: !Sub ${ProjectName}-${Environment}-LambdaExecutionRoleArn
