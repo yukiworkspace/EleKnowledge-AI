@@ -7,7 +7,7 @@ import json
 import os
 import boto3
 from io import BytesIO
-from PyPDF2 import PdfReader, PdfWriter
+from pypdf import PdfReader, PdfWriter
 from botocore.exceptions import ClientError
 
 s3_client = boto3.client('s3')

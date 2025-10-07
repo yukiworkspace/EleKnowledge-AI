@@ -481,11 +481,23 @@ Outputs:
     Export:
       Name: !Sub ${ProjectName}-${Environment}-UsersTableName
   
+  UsersTableArn:
+    Description: Users Table ARN
+    Value: !GetAtt UsersTable.Arn
+    Export:
+      Name: !Sub ${ProjectName}-${Environment}-UsersTableArn
+  
   ChatLogsTableName:
     Description: Chat Logs Table Name
     Value: !Ref ChatLogsTable
     Export:
       Name: !Sub ${ProjectName}-${Environment}-ChatLogsTableName
+  
+  ChatLogsTableArn:
+    Description: Chat Logs Table ARN
+    Value: !GetAtt ChatLogsTable.Arn
+    Export:
+      Name: !Sub ${ProjectName}-${Environment}-ChatLogsTableArn
 
   # S3
   DocumentsBucketName:

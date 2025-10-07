@@ -1,346 +1,241 @@
-# 📄 PDF自動分割機能セットアップガイド
+# 📄 大容量PDF対応ガイド - Knowledge Base用
 
 ## 概要
 
-Knowledge Baseに保管するPDFファイルのサイズ制限（50MB）に対応するため、大きなPDFを自動的に45MB以下に分割するLambda関数を設定します。
+Knowledge Baseに保管するPDFファイルには**50MBのサイズ制限**があります。
+大きなPDFファイルは、アップロード前に**45MB以下**に分割する必要があります。
+
+**注意:** 自動分割Lambda機能はPython 3.13での依存関係の問題により保留中です。
+当面は手動で分割してアップロードしてください。
 
 ---
 
-## PDF分割の仕組み
+## 手動PDF分割方法
 
-### トリガー
-S3バケット（`eleknowledge-ai-development-documents`）にPDFファイルがアップロードされると、自動的にLambda関数が起動します。
+### 方法1: Adobe Acrobat Proを使用（推奨）
 
-### 処理フロー
-```
-1. S3にPDFアップロード
-   ↓
-2. S3イベント通知 → PDF Splitter Lambda起動
-   ↓
-3. ファイルサイズチェック
-   ├─ 45MB以下 → 処理スキップ（そのまま使用）
-   └─ 45MB超過 → 分割処理開始
-   ↓
-4. PDF分割
-   ├─ ページ単位で分割
-   ├─ 各チャンク45MB以下
-   └─ メタデータ保持
-   ↓
-5. 分割ファイルをS3にアップロード
-   ├─ original_file_part1.pdf
-   ├─ original_file_part2.pdf
-   └─ ...
-   ↓
-6. 元ファイルにタグ付け
-   └─ Status: Split
+1. Adobe Acrobat Proで大容量PDFを開く
+2. **ツール** → **ページを整理** を選択
+3. **分割** ボタンをクリック
+4. 分割オプションを選択：
+   - **ファイルサイズ**: 45MB
+   - または **ページ数**: 適切なページ数を計算
+5. **出力オプション**:
+   - ファイル名に`_part1`, `_part2`を追加
+6. **分割** を実行
+
+### 方法2: オンラインツール（無料）
+
+**推奨サイト:**
+- https://www.ilovepdf.com/split_pdf
+- https://smallpdf.com/split-pdf
+
+**手順:**
+1. サイトにアクセス
+2. PDFファイルをアップロード
+3. 分割方法を選択：
+   - **カスタム範囲**でページ数を指定
+   - または**ファイルサイズ**で45MBを指定
+4. 分割実行
+5. ダウンロード
+
+### 方法3: PowerShellスクリプト（要PDFツール）
+
+```powershell
+# PDFtkツールを使用（事前インストール必要）
+# https://www.pdflabs.com/tools/pdftk-the-pdf-toolkit/
+
+# 総ページ数確認
+pdftk large-manual.pdf dump_data
+
+# ページ範囲で分割
+pdftk large-manual.pdf cat 1-50 output large-manual_part1.pdf
+pdftk large-manual.pdf cat 51-100 output large-manual_part2.pdf
 ```
 
-### 命名規則
+---
+
+## ファイル命名規則
+
+### 分割ファイルの命名
+
 ```
-元ファイル: manual_ProductA_v2.0.pdf (60MB)
-↓
+元ファイル:
+manual_ProductA_v2.0.pdf (60MB)
+
 分割後:
-- manual_ProductA_v2.0_part1.pdf (45MB)
-- manual_ProductA_v2.0_part2.pdf (15MB)
+manual_ProductA_v2.0_part1.pdf (45MB)
+manual_ProductA_v2.0_part2.pdf (15MB)
 ```
+
+**ルール:**
+- `_part1`, `_part2`, `_part3` の形式で番号を付ける
+- 元のファイル名は保持
+- 拡張子は `.pdf`
 
 ---
 
-## セットアップ手順
+## S3へのアップロード
 
-### Step 1: Phase 2デプロイ（PDF Splitter Lambda含む）
-
-```powershell
-cd infrastructure\sam
-
-# Build
-sam build --template phase2-template.yaml --use-container
-
-# Deploy
-sam deploy `
-  --stack-name EleKnowledge-AI-development-phase2 `
-  --profile eleknowledge-dev `
-  --region us-east-1 `
-  --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM `
-  --parameter-overrides `
-    Environment=development `
-    ProjectName=EleKnowledge-AI `
-    Phase1StackName=EleKnowledge-AI-development-phase1
-```
-
-### Step 2: S3イベント通知の設定
-
-Phase 1で作成されたS3バケットにイベント通知を追加します。
-
-#### 方法1: AWS CLI（推奨）
+### メタデータ付きアップロード
 
 ```powershell
-# バケット名を取得
-$bucketName = aws cloudformation describe-stacks `
-  --stack-name EleKnowledge-AI-development-phase1 `
-  --profile eleknowledge-dev `
-  --query 'Stacks[0].Outputs[?OutputKey==`DocumentsBucketName`].OutputValue' `
-  --output text
-
-# Lambda関数ARNを取得
-$lambdaArn = aws cloudformation describe-stacks `
-  --stack-name EleKnowledge-AI-development-phase2 `
-  --profile eleknowledge-dev `
-  --query 'Stacks[0].Outputs[?OutputKey==`PdfSplitterFunctionArn`].OutputValue' `
-  --output text
-
-# Lambda権限を追加（S3からの呼び出し許可）
-aws lambda add-permission `
-  --function-name EleKnowledge-AI-development-pdf-splitter `
-  --principal s3.amazonaws.com `
-  --statement-id s3-invoke-pdf-splitter `
-  --action lambda:InvokeFunction `
-  --source-arn "arn:aws:s3:::$bucketName" `
-  --profile eleknowledge-dev `
-  --region us-east-1
-
-# S3イベント通知設定
-$notificationConfig = @"
-{
-  "LambdaFunctionConfigurations": [
-    {
-      "Id": "pdf-splitter-trigger",
-      "LambdaFunctionArn": "$lambdaArn",
-      "Events": ["s3:ObjectCreated:*"],
-      "Filter": {
-        "Key": {
-          "FilterRules": [
-            {
-              "Name": "suffix",
-              "Value": ".pdf"
-            }
-          ]
-        }
-      }
-    }
-  ]
-}
-"@
-
-# 通知設定を適用
-$notificationConfig | Out-File -FilePath "notification-config.json" -Encoding UTF8
-aws s3api put-bucket-notification-configuration `
-  --bucket $bucketName `
-  --notification-configuration file://notification-config.json `
-  --profile eleknowledge-dev
-Remove-Item notification-config.json
-```
-
-#### 方法2: AWS Console
-
-1. **S3コンソール**にアクセス
-2. バケット `eleknowledge-ai-development-documents` を選択
-3. **Properties** タブ
-4. **Event notifications** セクション
-5. **Create event notification** をクリック
-
-**設定値:**
-- **Name**: `pdf-splitter-trigger`
-- **Event types**: `All object create events` を選択
-- **Destination**: `Lambda function`
-- **Lambda function**: `EleKnowledge-AI-development-pdf-splitter`
-- **Suffix**: `.pdf`
-
-6. **Save changes** をクリック
-
----
-
-## テスト
-
-### Step 1: テストPDFの準備
-
-サイズの大きいPDFファイルを準備（50MB以上推奨）
-
-### Step 2: アップロード
-
-```powershell
-# メタデータ付きでアップロード
 $bucketName = "eleknowledge-ai-development-documents"
 
-aws s3 cp "large-manual.pdf" `
-  "s3://$bucketName/manuals/test/large-manual.pdf" `
-  --metadata document-type=manual,product=TestProduct,model=v1.0 `
+# Part 1をアップロード
+aws s3 cp "manual_ProductA_v2.0_part1.pdf" `
+  "s3://$bucketName/manuals/electrical/manual_ProductA_v2.0_part1.pdf" `
+  --metadata document-type=manual,product=ProductA,model=v2.0,category=electrical `
+  --profile eleknowledge-dev
+
+# Part 2をアップロード（同じメタデータ）
+aws s3 cp "manual_ProductA_v2.0_part2.pdf" `
+  "s3://$bucketName/manuals/electrical/manual_ProductA_v2.0_part2.pdf" `
+  --metadata document-type=manual,product=ProductA,model=v2.0,category=electrical `
   --profile eleknowledge-dev
 ```
 
-### Step 3: CloudWatch Logsで確認
+**重要:** すべての分割ファイルに同じメタデータを設定してください。
+
+---
+
+## Knowledge Base同期
+
+分割ファイルをアップロード後、Knowledge Baseを同期します。
 
 ```powershell
-# Lambda実行ログを確認
-aws logs tail "/aws/lambda/EleKnowledge-AI-development-pdf-splitter" `
-  --follow `
-  --profile eleknowledge-dev `
-  --region us-east-1
+# Knowledge Base同期
+# 詳細は docs/knowledge-base-setup.md を参照
 ```
 
-**期待されるログ:**
-```
-Processing file: manuals/test/large-manual.pdf (60.00 MB)
-File exceeds 45MB, splitting...
-Split into 2 chunks
-Uploaded chunk 1: manuals/test/large-manual_part1.pdf (45.00 MB)
-Uploaded chunk 2: manuals/test/large-manual_part2.pdf (15.00 MB)
-Successfully split manuals/test/large-manual.pdf into 2 parts
-```
+Knowledge Baseは分割ファイルをそれぞれ独立したドキュメントとして扱います。
 
-### Step 4: S3で分割ファイルを確認
+---
+
+## ファイルサイズ確認
+
+### PowerShellでサイズ確認
 
 ```powershell
-# 分割ファイルの確認
-aws s3 ls "s3://$bucketName/manuals/test/" `
-  --profile eleknowledge-dev `
-  --recursive `
-  --human-readable
+# MB単位で表示
+$file = Get-Item "manual.pdf"
+$sizeMB = $file.Length / 1MB
+Write-Host "File size: $sizeMB MB"
+
+# 45MBを超えているかチェック
+if ($sizeMB -gt 45) {
+    Write-Host "WARNING: File size exceeds 45MB. Split required." -ForegroundColor Yellow
+} else {
+    Write-Host "OK: File size is within limit." -ForegroundColor Green
+}
 ```
 
-**期待される出力:**
-```
-60 MB  large-manual.pdf
-45 MB  large-manual_part1.pdf
-15 MB  large-manual_part2.pdf
+### 複数ファイルを一括チェック
+
+```powershell
+# ディレクトリ内のすべてのPDFをチェック
+Get-ChildItem "*.pdf" | ForEach-Object {
+    $sizeMB = $_.Length / 1MB
+    $status = if ($sizeMB -gt 45) { "⚠️ SPLIT REQUIRED" } else { "✅ OK" }
+    Write-Host "$($_.Name): $([math]::Round($sizeMB, 2)) MB - $status"
+}
 ```
 
 ---
 
-## 動作条件
+## 推奨ワークフロー
 
-### 処理対象ファイル
-- ✅ 拡張子が `.pdf`
-- ✅ ファイルサイズが45MB超過
-- ✅ ファイル名に `_part` が含まれていない（分割済みファイルを除外）
-- ✅ `processed/` または `tmp/` ディレクトリ配下でない
+### 新規ドキュメント追加時
 
-### 処理スキップ条件
-- ❌ PDFでないファイル（.docx, .txt など）
-- ❌ 45MB以下のPDF
-- ❌ 既に分割済みのファイル（`_part` 含む）
-- ❌ `processed/` または `tmp/` ディレクトリ配下のファイル
-
----
-
-## メタデータの引き継ぎ
-
-元のPDFファイルに設定されたメタデータは、すべての分割ファイルに自動的に引き継がれます。
-
-**例:**
-```powershell
-# 元ファイルのメタデータ
-document-type: manual
-product: ProductA
-model: v2.0
-
-# 分割後もすべてのファイルで同じメタデータ
-large-manual_part1.pdf → document-type: manual, product: ProductA, model: v2.0
-large-manual_part2.pdf → document-type: manual, product: ProductA, model: v2.0
+```
+1. PDFファイルサイズ確認
+   ├─ 45MB以下 → そのままアップロード
+   └─ 45MB超過 → 分割処理
+   ↓
+2. 分割（必要な場合）
+   ├─ Adobe Acrobat / オンラインツール
+   └─ ファイル名に _part1, _part2 追加
+   ↓
+3. メタデータ準備
+   ├─ document-type
+   ├─ product
+   ├─ model
+   └─ category
+   ↓
+4. S3にアップロード
+   └─ すべての分割ファイルに同じメタデータ
+   ↓
+5. Knowledge Base同期
+   └─ AWS Console または CLI
 ```
 
 ---
 
-## トラブルシューティング
+## 将来の自動化
 
-### Lambda関数が起動しない
+**Python 3.11対応のLambda関数を別途作成予定**
 
-**原因:**
-- S3イベント通知が設定されていない
-- Lambda権限が不足
+PDF自動分割Lambda関数は、Python 3.11ランタイムで再実装予定です。
+現時点ではPython 3.13での依存関係の問題により保留しています。
 
-**解決策:**
-```powershell
-# イベント通知設定を確認
-aws s3api get-bucket-notification-configuration `
-  --bucket $bucketName `
-  --profile eleknowledge-dev
-
-# Lambda権限を確認
-aws lambda get-policy `
-  --function-name EleKnowledge-AI-development-pdf-splitter `
-  --profile eleknowledge-dev `
-  --region us-east-1
-```
-
-### 分割に失敗する
-
-**原因:**
-- PDFファイルが破損している
-- メモリ不足
-
-**解決策:**
-1. PDFファイルの整合性を確認
-2. Lambda関数のメモリを増やす（現在3008MB）
-
-### タイムアウト
-
-**原因:**
-- 非常に大きいPDFファイル（200MB以上）
-
-**解決策:**
-1. Lambda Timeout延長（現在900秒 = 15分）
-2. ファイルを事前に分割してアップロード
+### 代替案
+- Python 3.11ランタイムでPDF Splitter Lambdaを作成
+- または手動分割のまま運用
 
 ---
 
 ## ベストプラクティス
 
-### 1. ファイルサイズ確認
+### 1. ファイル準備
 
-アップロード前にファイルサイズを確認：
-```powershell
-# ファイルサイズ確認（MB単位）
-(Get-Item "large-manual.pdf").Length / 1MB
-```
+- ✅ 事前にファイルサイズを確認
+- ✅ 45MB以下になるよう分割
+- ✅ 命名規則に従う（_part1, _part2）
+- ✅ すべての分割ファイルに同じメタデータ
 
-### 2. 段階的アップロード
+### 2. アップロード
 
-大量のファイルを一度にアップロードせず、少しずつアップロード：
-```powershell
-# 1つずつアップロード（Lambda処理を確認しながら）
-foreach ($file in Get-ChildItem "*.pdf") {
-    aws s3 cp $file.FullName "s3://$bucketName/manuals/" --profile eleknowledge-dev
-    Start-Sleep -Seconds 30  # 30秒待機
-}
-```
+- ✅ メタデータを必ず設定
+- ✅ 適切なディレクトリに配置
+- ✅ 分割ファイルを順番にアップロード
 
-### 3. CloudWatchモニタリング
+### 3. 同期＆確認
 
-Lambda実行状況を監視：
-- 実行時間
-- メモリ使用量
-- エラー発生率
+- ✅ アップロード後すぐに同期
+- ✅ テストクエリで検索確認
+- ✅ すべての分割ファイルが検索可能か確認
 
 ---
 
-## コスト試算
+## FAQ
 
-### PDF Splitter Lambda
+### Q: 分割したPDFは検索できますか？
 
-**想定:**
-- 1日10ファイルアップロード
-- 平均ファイルサイズ: 60MB
-- 平均処理時間: 30秒
-- メモリ: 3008MB
+**A:** はい。Knowledge Baseは各分割ファイルを独立したドキュメントとして扱います。
+ユーザーが質問すると、関連する部分（どの分割ファイルにあるか）が自動的に検索されます。
 
-**月間コスト:**
-- Lambda実行: $0.30/月
-- S3 API コール: $0.01/月
-- **合計**: 約 $0.31/月
+### Q: 分割前の元ファイルも必要ですか？
+
+**A:** いいえ。分割後のファイルのみをアップロードすれば十分です。
+ただし、バックアップとして元ファイルを別の場所に保管することを推奨します。
+
+### Q: メタデータは必須ですか？
+
+**A:** メタデータがなくても動作しますが、検索精度とフィルタリング機能のために推奨します。
 
 ---
 
 ## 完了チェックリスト
 
-- [ ] Phase 2デプロイ完了（PDF Splitter Lambda含む）
-- [ ] S3イベント通知設定完了
-- [ ] Lambda権限設定完了
-- [ ] テストPDFアップロード成功
-- [ ] 分割ファイル確認完了
-- [ ] CloudWatch Logs確認完了
-- [ ] メタデータ引き継ぎ確認完了
+- [ ] 大容量PDFファイルを特定
+- [ ] ファイルサイズを確認（45MB超過）
+- [ ] 分割ツールで45MB以下に分割
+- [ ] ファイル名に _part1, _part2 追加
+- [ ] すべての分割ファイルに同じメタデータを設定
+- [ ] S3にアップロード完了
+- [ ] Knowledge Base同期完了
+- [ ] テストクエリで検索確認
 
 ---
 
-**セットアップ完了後、大きなPDFファイルをアップロードして、自動分割を確認してください！**
+**大容量PDFは事前に45MB以下に分割してからアップロードしてください！**

@@ -239,22 +239,6 @@ Resources:
             Path: /rag/query
             Method: POST
   
-  PdfSplitterFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub ${ProjectName}-${Environment}-pdf-splitter
-      CodeUri: ../../lambda/utils/pdf-splitter/
-      Handler: app.lambda_handler
-      Description: Automatically split large PDFs into 45MB chunks
-      Role: !GetAtt RagLambdaRole.Arn
-      Timeout: 900
-      MemorySize: 3008
-      Environment:
-        Variables:
-          MAX_FILE_SIZE_MB: "45"
-          DOCUMENTS_BUCKET:
-            Fn::ImportValue: !Sub ${Phase1StackName}-DocumentsBucketName
-  
   ChatManagementFunction:
     Type: AWS::Serverless::Function
     Properties:
