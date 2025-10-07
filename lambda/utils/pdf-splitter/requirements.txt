@@ -1,0 +1,2 @@
+# PDF processing library
+PyPDF2>=3.0.0
