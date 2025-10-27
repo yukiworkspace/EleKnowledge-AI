@@ -2,6 +2,7 @@
 .env
 .env.local
 .env.*.local
+spec.md
 
 # AWS SAM
 .aws-sam/
@@ -43,3 +44,9 @@ yarn-error.log*
 # Temporary files
 *.tmp
 *.temp
+
+# Local metadata configuration (contains confidential information)
+docs/metadata-schema-local.md
+docs/*-local.md
+docs/*-local.json
+*-confidential.*
