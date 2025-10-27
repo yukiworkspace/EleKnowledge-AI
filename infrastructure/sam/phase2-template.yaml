@@ -47,7 +47,7 @@ Resources:
   KnowledgeBaseCollection:
     Type: AWS::OpenSearchServerless::Collection
     Properties:
-      Name: !Sub ${ProjectName}-${Environment}-kb
+      Name: !Sub eleknowledge-${Environment}-kb
       Type: VECTORSEARCH
       Description: Vector database for EleKnowledge-AI Knowledge Base
       Tags:
@@ -63,7 +63,7 @@ Resources:
   KnowledgeBaseEncryptionPolicy:
     Type: AWS::OpenSearchServerless::SecurityPolicy
     Properties:
-      Name: !Sub ${ProjectName}-${Environment}-kb-encryption
+      Name: !Sub eleknowledge-${Environment}-enc
       Type: encryption
       Policy: !Sub |
         {
@@ -71,7 +71,7 @@ Resources:
             {
               "ResourceType": "collection",
               "Resource": [
-                "collection/${ProjectName}-${Environment}-kb"
+                "collection/eleknowledge-${Environment}-kb"
               ]
             }
           ],
@@ -81,7 +81,7 @@ Resources:
   KnowledgeBaseNetworkPolicy:
     Type: AWS::OpenSearchServerless::SecurityPolicy
     Properties:
-      Name: !Sub ${ProjectName}-${Environment}-kb-network
+      Name: !Sub eleknowledge-${Environment}-net
       Type: network
       Policy: !Sub |
         [
@@ -90,13 +90,13 @@ Resources:
               {
                 "ResourceType": "collection",
                 "Resource": [
-                  "collection/${ProjectName}-${Environment}-kb"
+                  "collection/eleknowledge-${Environment}-kb"
                 ]
               },
               {
                 "ResourceType": "dashboard",
                 "Resource": [
-                  "collection/${ProjectName}-${Environment}-kb"
+                  "collection/eleknowledge-${Environment}-kb"
                 ]
               }
             ],
@@ -145,7 +145,10 @@ Resources:
               - Effect: Allow
                 Action:
                   - aoss:APIAccessAll
-                Resource: !GetAtt KnowledgeBaseCollection.Arn
+                  - aoss:CreateCollectionItems
+                  - aoss:UpdateCollectionItems
+                  - aoss:DescribeCollectionItems
+                Resource: '*'
 
   # ============================================================================
   # Lambda Execution Role (Phase 2)
