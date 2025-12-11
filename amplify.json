@@ -1,0 +1,12 @@
+{
+  "apps": [
+    {
+      "appRoot": "frontend",
+      "projectName": "eleknowledge-ai-frontend",
+      "roles": {
+        "amplifyRole": "arn:aws:iam::423623870147:role/amplify-role"
+      },
+      "envName": "dev"
+    }
+  ]
+}
