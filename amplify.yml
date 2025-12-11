@@ -1,7 +1,7 @@
 version: 1
 
 # Amplifyビルド設定ファイル
-# 本ファイルはAmplify Hostingでの自動ビルド・デプロイに使用されます
+# モノレポ構成でfrontend/ディレクトリをホストする場合の設定
 
 frontend:
   phases:
@@ -18,12 +18,12 @@ frontend:
       commands:
         - echo "Build completed successfully"
   artifacts:
-    baseDirectory: .next
+    baseDirectory: frontend/.next
     files:
       - '**/*'
   cache:
     paths:
-      - node_modules/**/*
+      - frontend/node_modules/**/*
 
 env:
   variables:
