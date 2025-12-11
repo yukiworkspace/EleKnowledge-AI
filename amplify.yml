@@ -1,0 +1,31 @@
+version: 1
+
+# Amplifyビルド設定ファイル
+# 本ファイルはAmplify Hostingでの自動ビルド・デプロイに使用されます
+
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - echo "Installing dependencies..."
+        - npm ci
+        - echo "Setting up environment variables..."
+    build:
+      commands:
+        - echo "Building Next.js application..."
+        - npm run build
+    postBuild:
+      commands:
+        - echo "Build completed successfully"
+  artifacts:
+    baseDirectory: .next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+
+env:
+  variables:
+    NODE_ENV: production
+    NEXT_PUBLIC_AWS_REGION: us-east-1
