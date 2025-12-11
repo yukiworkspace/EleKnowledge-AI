@@ -18,12 +18,17 @@ frontend:
       commands:
         - echo "Build completed successfully"
   artifacts:
-    baseDirectory: frontend/.next
+    baseDirectory: frontend/out
     files:
       - '**/*'
   cache:
     paths:
       - frontend/node_modules/**/*
+
+redirects:
+  - source: '</^[^.]+$|\.(?!js$|css$|ico$|png$|jpg$|jpeg$|svg$|gif$|webp$)(?:[^.]+)$/>'
+    status: 200
+    target: '/index.html'
 
 env:
   variables:
