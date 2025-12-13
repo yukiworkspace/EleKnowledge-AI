@@ -35,6 +35,14 @@ def lambda_handler(event, context):
         'Access-Control-Allow-Methods': 'POST,OPTIONS'
     }
     
+    # Handle CORS preflight request
+    if event.get('httpMethod') == 'OPTIONS':
+        return {
+            'statusCode': 200,
+            'headers': headers,
+            'body': json.dumps({})
+        }
+    
     try:
         # Parse request body
         if isinstance(event.get('body'), str):
