@@ -3,10 +3,10 @@
 ## プロジェクト情報
 
 **プロジェクト名:** EleKnowledge-AI  
-**バージョン:** 1.0.0  
-**最終更新日:** 2025-10-02  
+**バージョン:** 1.0.1  
+**最終更新日:** 2025-10-15  
 **作成者:** Development Team  
-**ステータス:** Phase 1 開発中
+**ステータス:** Phase 2 開発中
 
 ---
 
@@ -388,32 +388,85 @@ interface SearchFilters {
 **ドキュメント構造:**
 ```
 s3://eleknowledge-documents/
-├── manuals/
-│   ├── electrical/
-│   ├── mechanical/
-│   └── software/
-├── policies/
-│   ├── safety/
-│   └── quality/
-├── reports/
-│   ├── trouble-cases/
-│   └── maintenance/
-└── specifications/
-    ├── products/
-    └── materials/
+├── C-manual/
+├── D-manual/
+├── EA-manual/
+├── GM/
+├── Installation-Notebooks/
+├── Installation-Standards/
+├── S-manual
+└── yellow-book
 ```
 
 **メタデータスキーマ:**
 ```json
 {
-  "document-type": "manual",
-  "product": "ProductA",
-  "model": "v2.0",
-  "category": "electrical",
-  "department": "engineering",
-  "version": "2.0",
-  "published-date": "2024-01-01",
-  "author": "Engineering Team"
+  "metadataAttributes": {
+    "title": {
+      "value": {
+        "type": "STRING",
+        "stringValue": "三菱エレベーター AXIEZ-LINKs P形"
+      },
+      "includeForEmbedding": true
+    },
+    "document": {
+      "value": {
+        "type": "STRING",
+        "stringValue": "C資料"
+      },
+      "includeForEmbedding": true
+    },
+    "product": {
+      "value": {
+        "type": "STRING",
+        "stringValue": "エレベーター"
+      },
+      "includeForEmbedding": true
+    },
+    "model": {
+      "value": {
+        "type": "STRING",
+        "stringValue": "KE-LG"
+      },
+      "includeForEmbedding": true
+    },
+    "control-system": {
+      "value": {
+        "type": "STRING",
+        "stringValue": "VFGLF"
+      },
+      "includeForEmbedding": true
+    },
+    "keywords": {
+      "value": {
+        "type": "STRING_LIST",
+        "stringListValue": [
+          "AXIEZ-LINKs",
+          "P形",
+          "据付場用図",
+          "機械部分",
+          "標準図",
+          "巻上機",
+          "調速機",
+          "非常止め",
+          "ガイドシュー",
+          "ドア装置",
+          "釣合オモリ",
+          "レール",
+          "緩衝器",
+          "ロープ掛け"
+        ]
+      },
+      "includeForEmbedding": true
+    },
+    "description": {
+      "value": {
+        "type": "STRING",
+        "stringValue": "AXIEZ-LINKs P形エレベーター（KE-LG/KE-LGM：P7～15）のVFGLF方式における据付場用標準図の機種別表。機械部分の据付調整に必要な図面番号と仕様を網羅した技術資料。"
+      },
+      "includeForEmbedding": true
+    }
+  }
 }
 ```
 
@@ -1250,7 +1303,7 @@ interface ErrorDisplay {
 
 ## 9. 開発ロードマップ
 
-### 9.1 Phase 1: 基盤整備（2ヶ月）
+### 9.1 Phase 1: 基盤整備
 
 **目標:** 認証基盤とホスト環境の構築
 
@@ -1276,7 +1329,7 @@ interface ErrorDisplay {
 - Week 4: 認証機能完成
 - Week 8: Phase 1完了、Phase 2開始
 
-### 9.2 Phase 2: RAGチャット機能（2ヶ月）
+### 9.2 Phase 2: RAGチャット機能
 
 **目標:** RAGチャットの完全実装
 
@@ -1305,7 +1358,7 @@ interface ErrorDisplay {
 - Week 14: RAG Lambda完成
 - Week 16: Phase 2完了、Phase 3開始
 
-### 9.3 Phase 3: 新機能開発（3ヶ月）
+### 9.3 Phase 3: 新機能開発
 
 **Phase 2完了後に詳細策定**
 
