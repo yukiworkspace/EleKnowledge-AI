@@ -188,8 +188,11 @@ export default function ForgotPasswordPage() {
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                placeholder="8文字以上"
+                placeholder="8文字以上、大文字・小文字・数字・特殊文字を含む"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                ✓ 8文字以上 ✓ 大文字 ✓ 小文字 ✓ 数字 ✓ 特殊文字（!@#$%など）
+              </p>
             </div>
 
             <div>
