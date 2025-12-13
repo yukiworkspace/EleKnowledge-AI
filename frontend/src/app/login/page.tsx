@@ -104,7 +104,13 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <div className="text-sm text-center">
+          <div className="flex justify-between text-sm">
+            <Link
+              href="/forgot-password"
+              className="font-medium text-blue-600 hover:text-blue-500"
+            >
+              パスワードを忘れた
+            </Link>
             <Link
               href="/signup"
               className="font-medium text-blue-600 hover:text-blue-500"
