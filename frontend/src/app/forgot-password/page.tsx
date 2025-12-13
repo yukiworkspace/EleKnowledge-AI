@@ -21,14 +21,25 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      
+      if (!apiUrl) {
+        throw new Error('API設定が見つかりません。環境変数を確認してください。');
+      }
+
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/forgot-password`,
+        `${apiUrl}/auth/forgot-password`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email }),
         }
       );
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('APIがアクセスできません。Lambda関数がデプロイされているか確認してください。');
+      }
 
       const data = await response.json();
 
@@ -62,8 +73,14 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      
+      if (!apiUrl) {
+        throw new Error('API設定が見つかりません。環境変数を確認してください。');
+      }
+
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/confirm-password-reset`,
+        `${apiUrl}/auth/confirm-password-reset`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -74,6 +91,11 @@ export default function ForgotPasswordPage() {
           }),
         }
       );
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('APIがアクセスできません。Lambda関数がデプロイされているか確認してください。');
+      }
 
       const data = await response.json();
 
