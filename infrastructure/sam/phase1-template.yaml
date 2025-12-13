@@ -1,8 +1,8 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  EleKnowledge-AI Phase 1: 基盤整備
-  認証システム、DynamoDB、S3、Lambda、API Gateway
+  EleKnowledge-AI Phase 1: Infrastructure Setup
+  Authentication System, DynamoDB, S3, Lambda, API Gateway
 
 Parameters:
   Environment:
@@ -46,7 +46,7 @@ Globals:
 
 Resources:
   # ============================================================================
-  # Amazon Cognito User Pool
+  # Cognito User Pool Configuration
   # ============================================================================
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
@@ -120,7 +120,7 @@ Resources:
         - name
 
   # ============================================================================
-  # DynamoDB Tables
+  # DynamoDB Table Definitions
   # ============================================================================
   UsersTable:
     Type: AWS::DynamoDB::Table
@@ -202,7 +202,7 @@ Resources:
           Value: "1"
 
   # ============================================================================
-  # S3 Buckets
+  # Amazon S3 Bucket Configuration
   # ============================================================================
   DocumentsBucket:
     Type: AWS::S3::Bucket
@@ -271,7 +271,7 @@ Resources:
           Value: "1"
 
   # ============================================================================
-  # IAM Roles
+  # AWS IAM Role Definitions
   # ============================================================================
   LambdaExecutionRole:
     Type: AWS::IAM::Role
@@ -345,7 +345,7 @@ Resources:
           Value: "1"
 
   # ============================================================================
-  # Lambda Functions - 認証
+  # Lambda Functions for Authentication
   # ============================================================================
   SignupFunction:
     Type: AWS::Serverless::Function
@@ -450,7 +450,7 @@ Resources:
             Method: POST
 
   # ============================================================================
-  # API Gateway
+  # Amazon API Gateway Configuration
   # ============================================================================
   AuthApi:
     Type: AWS::Serverless::Api
@@ -486,7 +486,7 @@ Resources:
         Phase: "1"
 
   # ============================================================================
-  # CloudWatch Logs
+  # AWS CloudWatch Logs Configuration
   # ============================================================================
   ApiGatewayLogGroup:
     Type: AWS::Logs::LogGroup
