@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getCurrentUser } from 'aws-amplify/auth';
+import { getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
 import axios from 'axios';
 
 interface Message {
@@ -52,6 +52,17 @@ export default function ChatPage() {
   const API_URL = process.env.NEXT_PUBLIC_RAG_API_URL || '';
   const CHAT_API_URL = process.env.NEXT_PUBLIC_CHAT_API_URL || '';
 
+  // 認可トークン取得関数
+  const getAuthToken = async (): Promise<string | null> => {
+    try {
+      const session = await fetchAuthSession();
+      return session.tokens?.idToken?.toString() || null;
+    } catch (err) {
+      console.error('Error fetching auth token:', err);
+      return null;
+    }
+  };
+
   // 初期化：ユーザー情報取得とセッション読み込み
   useEffect(() => {
     const initializeChat = async () => {
@@ -79,10 +90,18 @@ export default function ChatPage() {
   const fetchSessions = async (subId: string) => {
     try {
       setIsLoadingSessions(true);
+      const token = await getAuthToken();
+      
       console.log('Fetching sessions with URL:', `${CHAT_API_URL}/chat/sessions?userId=${subId}`);
       console.log('API_URL:', CHAT_API_URL);
+      console.log('Token available:', !!token);
       
-      const response = await axios.get(`${CHAT_API_URL}/chat/sessions?userId=${subId}`);
+      const response = await axios.get(`${CHAT_API_URL}/chat/sessions?userId=${subId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
       console.log('Sessions fetched successfully:', response.data);
       setSessions(response.data.sessions || []);
     } catch (err: any) {
@@ -101,7 +120,13 @@ export default function ChatPage() {
 
   const fetchSessionMessages = async (sessionId: string) => {
     try {
-      const response = await axios.get(`${CHAT_API_URL}/chat/sessions/${sessionId}/messages`);
+      const token = await getAuthToken();
+      const response = await axios.get(`${CHAT_API_URL}/chat/sessions/${sessionId}/messages`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
       setMessages(response.data.messages || []);
       setCurrentSession(sessionId);
     } catch (err) {
@@ -127,6 +152,7 @@ export default function ChatPage() {
     setError('');
 
     try {
+      const token = await getAuthToken();
       const payload = {
         sessionId: currentSession,
         userId: userId,
@@ -143,7 +169,12 @@ export default function ChatPage() {
         payload: payload
       });
 
-      const response = await axios.post(`${API_URL}/rag/query`, payload);
+      const response = await axios.post(`${API_URL}/rag/query`, payload, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
       console.log('RAG query response:', response.data);
 
       const aiMessage: Message = {
@@ -190,7 +221,13 @@ export default function ChatPage() {
     if (!window.confirm('このセッションを削除しますか？')) return;
 
     try {
-      await axios.delete(`${CHAT_API_URL}/chat/sessions/${sessionId}`);
+      const token = await getAuthToken();
+      await axios.delete(`${CHAT_API_URL}/chat/sessions/${sessionId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
       setSessions(sessions.filter(s => s.sessionId !== sessionId));
       if (currentSession === sessionId) {
         handleNewSession();
@@ -204,9 +241,15 @@ export default function ChatPage() {
     if (!currentSession) return;
 
     try {
+      const token = await getAuthToken();
       await axios.put(`${CHAT_API_URL}/chat/messages/${messageId}/feedback`, {
         sessionId: currentSession,
         feedback
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
 
       setMessages(messages.map(m =>
