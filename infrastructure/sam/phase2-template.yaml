@@ -318,6 +318,9 @@ Resources:
               Access-Control-Allow-Origin: "'*'"
       MethodSettings:
         - ResourcePath: "/*"
+          HttpMethod: "OPTIONS"
+          AuthorizationType: NONE
+        - ResourcePath: "/*"
           HttpMethod: "*"
           ThrottlingBurstLimit: 20
           ThrottlingRateLimit: 5
@@ -355,6 +358,9 @@ Resources:
             Headers:
               Access-Control-Allow-Origin: "'*'"
       MethodSettings:
+        - ResourcePath: "/*"
+          HttpMethod: "OPTIONS"
+          AuthorizationType: NONE
         - ResourcePath: "/*"
           HttpMethod: "*"
           ThrottlingBurstLimit: 50
