@@ -79,11 +79,21 @@ export default function ChatPage() {
   const fetchSessions = async (subId: string) => {
     try {
       setIsLoadingSessions(true);
+      console.log('Fetching sessions with URL:', `${CHAT_API_URL}/chat/sessions?userId=${subId}`);
+      console.log('API_URL:', CHAT_API_URL);
+      
       const response = await axios.get(`${CHAT_API_URL}/chat/sessions?userId=${subId}`);
+      console.log('Sessions fetched successfully:', response.data);
       setSessions(response.data.sessions || []);
-    } catch (err) {
-      console.error('Error fetching sessions:', err);
-      setError('セッション取得に失敗しました');
+    } catch (err: any) {
+      console.error('Error fetching sessions - Full error:', {
+        message: err.message,
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        data: err.response?.data,
+        config: err.config
+      });
+      setError(`セッション取得に失敗しました: ${err.response?.status || err.message}`);
     } finally {
       setIsLoadingSessions(false);
     }
@@ -117,7 +127,7 @@ export default function ChatPage() {
     setError('');
 
     try {
-      const response = await axios.post(`${API_URL}/rag/query`, {
+      const payload = {
         sessionId: currentSession,
         userId: userId,
         query: input,
@@ -126,7 +136,15 @@ export default function ChatPage() {
           product: selectedFilters.product || undefined,
           model: selectedFilters.model || undefined
         }
+      };
+      
+      console.log('Sending RAG query:', {
+        url: `${API_URL}/rag/query`,
+        payload: payload
       });
+
+      const response = await axios.post(`${API_URL}/rag/query`, payload);
+      console.log('RAG query response:', response.data);
 
       const aiMessage: Message = {
         id: response.data.aiMessageId,
@@ -146,7 +164,15 @@ export default function ChatPage() {
         await fetchSessionMessages(response.data.sessionId);
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'エラーが発生しました');
+      console.error('Error sending RAG query - Full error:', {
+        message: err.message,
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        data: err.response?.data,
+        config: err.config,
+        url: err.config?.url
+      });
+      setError(`エラーが発生しました: ${err.response?.data?.message || err.message || 'Unknown error'}`);
       // ユーザーメッセージは残す
     } finally {
       setLoading(false);
