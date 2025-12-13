@@ -175,6 +175,14 @@ def lambda_handler(event, context):
         # Get route info
         http_method = event.get('httpMethod', event.get('requestContext', {}).get('http', {}).get('method'))
         path = event.get('path', event.get('rawPath', ''))
+        
+        # Handle CORS preflight requests (OPTIONS)
+        if http_method == 'OPTIONS':
+            return {
+                'statusCode': 200,
+                'headers': headers,
+                'body': ''
+            }
         path_parameters = event.get('pathParameters', {})
         query_parameters = event.get('queryStringParameters', {}) or {}
         
