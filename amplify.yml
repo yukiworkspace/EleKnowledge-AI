@@ -8,22 +8,23 @@ frontend:
     preBuild:
       commands:
         - echo "Installing dependencies..."
-        - cd frontend && npm install
+        - npm install
         - echo "Setting up environment variables..."
     build:
       commands:
         - echo "Building Next.js application..."
-        - cd frontend && npm run build
+        - npm run build
     postBuild:
       commands:
         - echo "Build completed successfully"
   artifacts:
-    baseDirectory: frontend/out
+    baseDirectory: out
     files:
       - '**/*'
   cache:
     paths:
-      - frontend/node_modules/**/*
+      - node_modules/**/*
+  appRoot: frontend
 
 redirects:
   - source: '</^[^.]+$|\.(?!js$|css$|ico$|png$|jpg$|jpeg$|svg$|gif$|webp$)(?:[^.]+)$/>'
