@@ -7,17 +7,21 @@ import os
 import boto3
 import time
 from datetime import datetime
+from decimal import Decimal
 from botocore.exceptions import ClientError
 
-# Initialize AWS clients
-bedrock_agent = boto3.client('bedrock-agent-runtime', region_name='us-east-1')
-bedrock_runtime = boto3.client('bedrock-runtime', region_name='us-east-1')
-dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 
 # Environment variables
 KNOWLEDGE_BASE_ID = os.environ.get('KNOWLEDGE_BASE_ID', 'PLACEHOLDER')
-BEDROCK_MODEL_ID = os.environ.get('BEDROCK_MODEL_ID', 'anthropic.claude-sonnet-4-20250514-v1:0')
-CHATLOGS_TABLE_NAME = os.environ.get('CHATLOGS_TABLE')
+BEDROCK_MODEL_ID = os.environ.get('BEDROCK_MODEL_ID')
+CHATLOGS_TABLE_NAME = os.environ.get('DYNAMODB_CHATLOGS_TABLE')
+DOCUMENTS_BUCKET = os.environ.get('DOCUMENTS_BUCKET')
+AWS_REGION = os.environ.get('AWS_REGION', 'us-east-1')
+
+# Initialize AWS clients with region from environment
+bedrock_agent = boto3.client('bedrock-agent-runtime', region_name=AWS_REGION)
+bedrock_runtime = boto3.client('bedrock-runtime', region_name=AWS_REGION)
+dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
 
 # DynamoDB table
 chatlogs_table = dynamodb.Table(CHATLOGS_TABLE_NAME)
@@ -203,6 +207,7 @@ def extract_citations(kb_results: dict) -> tuple:
     """
     citations = []
     source_documents = []
+    s3_client = boto3.client('s3', region_name=AWS_REGION)
     
     for result in kb_results.get('retrievalResults', [])[:10]:
         metadata = result.get('metadata', {})
@@ -212,13 +217,26 @@ def extract_citations(kb_results: dict) -> tuple:
             doc_name = doc_uri.split('/')[-1]
             citations.append(doc_name)
             
+            # S3 URIをHTTPS署名付きURLに変換
+            signed_url = doc_uri
+            try:
+                if DOCUMENTS_BUCKET and doc_uri.startswith('s3://'):
+                    key = doc_uri.replace(f's3://{DOCUMENTS_BUCKET}/', '')
+                    signed_url = s3_client.generate_presigned_url(
+                        'get_object',
+                        Params={'Bucket': DOCUMENTS_BUCKET, 'Key': key},
+                        ExpiresIn=3600
+                    )
+            except Exception as e:
+                print(f"Error generating signed URL: {e}")
+            
             source_doc = {
                 'documentName': doc_name,
-                'sourceUri': doc_uri,
+                'sourceUri': signed_url,
                 'documentType': metadata.get('document-type', 'unknown'),
                 'product': metadata.get('product', ''),
                 'model': metadata.get('model', ''),
-                'relevance': result.get('score', 0.0)
+                'relevance': Decimal(str(result.get('score', 0.0)))
             }
             source_documents.append(source_doc)
     
@@ -339,6 +357,10 @@ def lambda_handler(event, context):
         session_title = None
         if not chat_history:
             session_title = generate_session_title(query)
+        
+        # Convert Decimal to float for JSON serialization
+        for doc in source_documents:
+            doc['relevance'] = float(doc['relevance'])
         
         return {
             'statusCode': 200,
