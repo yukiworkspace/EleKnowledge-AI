@@ -4,6 +4,10 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { confirmSignUp, resendSignUpCode } from 'aws-amplify/auth';
 import Link from 'next/link';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { VerificationCodeInput } from '@/components/ui/VerificationCodeInput';
 
 function VerifyContent() {
   const router = useRouter();
@@ -13,6 +17,7 @@ function VerifyContent() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
 
   useEffect(() => {
     const emailParam = searchParams.get('email');
@@ -20,6 +25,16 @@ function VerifyContent() {
       setEmail(emailParam);
     }
   }, [searchParams]);
+  
+  // 再送信タイマー
+  useEffect(() => {
+    if (resendTimer > 0) {
+      const timer = setTimeout(() => {
+        setResendTimer(resendTimer - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendTimer]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,12 +68,15 @@ function VerifyContent() {
   };
 
   const handleResendCode = async () => {
+    if (resendTimer > 0) return;
+    
     setError('');
     setSuccess('');
     
     try {
       await resendSignUpCode({ username: email });
       setSuccess('確認コードを再送信しました。メールをチェックしてください。');
+      setResendTimer(60); // 60秒のタイマー
     } catch (err: any) {
       console.error('Resend code error:', err);
       setError('確認コードの再送信に失敗しました。');
@@ -67,7 +85,7 @@ function VerifyContent() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+      <div className="w-full max-w-[28rem] space-y-8 flex-shrink-0">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             メールアドレスの確認
@@ -79,67 +97,81 @@ function VerifyContent() {
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="text-sm text-red-800">{error}</div>
-            </div>
+            <ErrorMessage 
+              message={error} 
+              variant="error"
+              onDismiss={() => setError('')}
+            />
           )}
           
           {success && (
-            <div className="rounded-md bg-green-50 p-4">
-              <div className="text-sm text-green-800">{success}</div>
-            </div>
+            <ErrorMessage 
+              message={success} 
+              variant="info"
+              onDismiss={() => setSuccess('')}
+            />
           )}
           
-          <div className="rounded-md shadow-sm space-y-4">
+          <div className="space-y-6">
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              required
+              placeholder="メールアドレス"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setError('');
+              }}
+              disabled={!!searchParams.get('email')}
+            />
+            
             <div>
-              <label htmlFor="email" className="sr-only">
-                メールアドレス
+              <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
+                確認コード（6桁）
               </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="メールアドレス"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="code" className="sr-only">
-                確認コード
-              </label>
-              <input
-                id="code"
-                name="code"
-                type="text"
-                required
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="確認コード（6桁）"
+              <VerificationCodeInput
+                length={6}
                 value={code}
-                onChange={(e) => setCode(e.target.value)}
-                maxLength={6}
+                onChange={(value) => {
+                  setCode(value);
+                  setError('');
+                }}
+                error={error && code.length === 6 ? error : undefined}
               />
+              {code.length > 0 && code.length < 6 && (
+                <p className="mt-2 text-sm text-gray-500 text-center">
+                  {6 - code.length}桁残り
+                </p>
+              )}
             </div>
           </div>
 
           <div className="space-y-4">
-            <button
+            <Button
               type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              variant="primary"
+              size="lg"
+              isLoading={loading}
+              disabled={code.length !== 6}
+              className="w-full"
             >
-              {loading ? '確認中...' : '確認'}
-            </button>
+              確認
+            </Button>
 
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="md"
               onClick={handleResendCode}
-              className="w-full text-sm text-blue-600 hover:text-blue-500"
+              disabled={resendTimer > 0}
+              className="w-full"
             >
-              確認コードを再送信
-            </button>
+              {resendTimer > 0 
+                ? `確認コードを再送信（${resendTimer}秒）` 
+                : '確認コードを再送信'}
+            </Button>
           </div>
 
           <div className="text-sm text-center">
