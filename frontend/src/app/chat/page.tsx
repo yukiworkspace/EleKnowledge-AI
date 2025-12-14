@@ -512,7 +512,7 @@ export default function ChatPage() {
                 セッションはまだありません
               </div>
             ) : (
-              <div className="space-y-1 p-1.5">
+              <div className="space-y-0.5 p-1">
                 {sessions.map((session, index) => (
                   <div
                     key={session.sessionId}
@@ -520,7 +520,7 @@ export default function ChatPage() {
                       fetchSessionMessages(session.sessionId);
                       setSidebarOpen(false);
                     }}
-                    className={`p-2.5 rounded-lg cursor-pointer transition-all duration-200 group ${
+                    className={`p-2 rounded-lg cursor-pointer transition-all duration-200 group ${
                       currentSession === session.sessionId
                         ? 'bg-gradient-to-r from-blue-50 to-blue-100/50 border-l-4 border-blue-600 shadow-sm'
                         : 'hover:bg-gray-50 hover:shadow-sm'
@@ -529,10 +529,10 @@ export default function ChatPage() {
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex-1 truncate min-w-0">
-                        <p className="font-medium text-sm text-gray-900 truncate">
+                        <p className="font-medium text-[13px] text-gray-900 truncate leading-tight">
                           {session.title}
                         </p>
-                        <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-2">
+                        <p className="text-[11px] text-gray-500 mt-0 flex items-center gap-1.5">
                           <span>{session.messageCount}件</span>
                           <span className="text-gray-400">・</span>
                           <span className="text-gray-500">残り {session.daysUntilDeletion} 日</span>
@@ -543,11 +543,11 @@ export default function ChatPage() {
                           e.stopPropagation();
                           handleDeleteSession(session.sessionId);
                         }}
-                        className="opacity-0 group-hover:opacity-100 ml-2 text-gray-400 hover:text-red-600 flex-shrink-0 transition-all duration-200 hover:bg-red-50 rounded p-1"
+                        className="opacity-0 group-hover:opacity-100 ml-1.5 text-gray-400 hover:text-red-600 flex-shrink-0 transition-all duration-200 hover:bg-red-50 rounded p-0.5"
                         title="削除"
                         aria-label="セッションを削除"
                       >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </button>
