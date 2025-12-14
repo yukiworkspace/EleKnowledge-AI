@@ -43,6 +43,7 @@ export default function ChatPage() {
   const [error, setError] = useState('');
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState({
     documentType: '',
     product: '',
@@ -66,6 +67,19 @@ export default function ChatPage() {
   // 初期化：ユーザー情報取得とセッション読み込み
   useEffect(() => {
     const initializeChat = async () => {
+      // 開発モード: 認証をスキップする場合
+      const skipAuth = process.env.NEXT_PUBLIC_SKIP_AUTH === 'true';
+      
+      if (skipAuth) {
+        // モックユーザーIDを設定
+        const mockUserId = 'dev-user-123';
+        setUserId(mockUserId);
+        // セッション取得はスキップ（APIが利用できないため）
+        setIsLoadingSessions(false);
+        setSessions([]);
+        return;
+      }
+
       try {
         const user = await getCurrentUser();
         const subId = user.userId;
@@ -263,26 +277,64 @@ export default function ChatPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4 flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-gray-900">EleKnowledge-AI</h1>
-          <span className="text-sm text-gray-500">📚 RAGチャット</span>
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="md:hidden p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label="メニューを開く"
+          >
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">EleKnowledge-AI</h1>
+          <span className="hidden sm:inline text-sm text-gray-500">📚 RAGチャット</span>
         </div>
         <Link
           href="/"
-          className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="inline-flex items-center px-3 sm:px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
         >
-          ホームへ戻る
+          <span className="hidden sm:inline">ホームへ戻る</span>
+          <span className="sm:hidden">ホーム</span>
         </Link>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Mobile Sidebar Overlay */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
         {/* Sidebar - Session List */}
-        <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
+        <div className={`fixed md:static inset-y-0 left-0 z-50 md:z-auto w-64 bg-white border-r border-gray-200 flex flex-col transform transition-transform duration-300 ease-in-out ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        }`}>
+          {/* Mobile Sidebar Header */}
+          <div className="md:hidden flex items-center justify-between p-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">メニュー</h2>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none"
+              aria-label="メニューを閉じる"
+            >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
           {/* New Session Button */}
           <button
-            onClick={handleNewSession}
-            className="m-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            onClick={() => {
+              handleNewSession();
+              setSidebarOpen(false);
+            }}
+            className="m-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
           >
             + 新規チャット
           </button>
@@ -302,7 +354,10 @@ export default function ChatPage() {
                 {sessions.map(session => (
                   <div
                     key={session.sessionId}
-                    onClick={() => fetchSessionMessages(session.sessionId)}
+                    onClick={() => {
+                      fetchSessionMessages(session.sessionId);
+                      setSidebarOpen(false);
+                    }}
                     className={`p-3 rounded-lg cursor-pointer transition-colors group ${
                       currentSession === session.sessionId
                         ? 'bg-blue-50 border-l-4 border-blue-600'
@@ -398,69 +453,123 @@ export default function ChatPage() {
                     key={message.id}
                     className={`flex ${
                       message.role === 'user' ? 'justify-end' : 'justify-start'
-                    }`}
+                    } mb-4`}
                   >
                     <div
-                      className={`max-w-2xl px-4 py-3 rounded-lg ${
+                      className={`max-w-[85%] sm:max-w-2xl px-4 py-3 rounded-2xl shadow-sm ${
                         message.role === 'user'
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 text-gray-900'
+                          ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-br-sm'
+                          : 'bg-white border border-gray-200 text-gray-900 rounded-bl-sm'
                       }`}
                     >
-                      <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                      {/* Role Indicator */}
+                      <div className={`flex items-center gap-2 mb-2 ${
+                        message.role === 'user' ? 'justify-end' : 'justify-start'
+                      }`}>
+                        {message.role === 'assistant' && (
+                          <div className="flex items-center gap-1">
+                            <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+                              <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                              </svg>
+                            </div>
+                            <span className="text-xs font-medium text-gray-500">AI</span>
+                          </div>
+                        )}
+                        {message.role === 'user' && (
+                          <span className="text-xs font-medium text-blue-100">あなた</span>
+                        )}
+                      </div>
+
+                      <p className={`whitespace-pre-wrap text-sm leading-relaxed ${
+                        message.role === 'user' ? 'text-white' : 'text-gray-900'
+                      }`}>
                         {message.content}
                       </p>
 
                       {/* Citations */}
-                      {message.role === 'assistant' && message.sourceDocuments && (
-                        <div className="mt-3 space-y-2">
-                          <p className="text-xs font-semibold opacity-70">📄 参考資料:</p>
-                          {message.sourceDocuments.map((doc, idx) => (
-                            <a
-                              key={idx}
-                              href={doc.sourceUri}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="block text-xs underline opacity-70 hover:opacity-100"
-                            >
-                              {doc.documentName} ({doc.relevance.toFixed(2)})
-                            </a>
-                          ))}
+                      {message.role === 'assistant' && message.sourceDocuments && message.sourceDocuments.length > 0 && (
+                        <div className="mt-4 pt-3 border-t border-gray-200 space-y-2">
+                          <p className="text-xs font-semibold text-gray-600 mb-2">📄 参考資料:</p>
+                          <div className="space-y-1.5">
+                            {message.sourceDocuments.map((doc, idx) => (
+                              <a
+                                key={idx}
+                                href={doc.sourceUri}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 text-xs text-blue-600 hover:text-blue-700 hover:underline transition-colors"
+                              >
+                                <svg className="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span className="truncate">{doc.documentName}</span>
+                                <span className="text-gray-400 text-[10px]">({(doc.relevance * 100).toFixed(0)}%)</span>
+                              </a>
+                            ))}
+                          </div>
                         </div>
                       )}
 
                       {/* Feedback Buttons */}
                       {message.role === 'assistant' && (
-                        <div className="mt-3 flex gap-2">
+                        <div className="mt-3 pt-3 border-t border-gray-200 flex gap-2">
                           <button
                             onClick={() => handleFeedback(message.id, 'good')}
-                            className={`text-sm px-2 py-1 rounded transition-colors ${
+                            className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-all ${
                               message.feedback === 'good'
-                                ? 'bg-green-500 text-white'
-                                : 'bg-gray-200 text-gray-700 hover:bg-green-400'
+                                ? 'bg-green-500 text-white shadow-md'
+                                : 'bg-gray-100 text-gray-700 hover:bg-green-50 hover:text-green-700'
                             }`}
                           >
-                            👍 役立つ
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                            </svg>
+                            役立つ
                           </button>
                           <button
                             onClick={() => handleFeedback(message.id, 'bad')}
-                            className={`text-sm px-2 py-1 rounded transition-colors ${
+                            className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-all ${
                               message.feedback === 'bad'
-                                ? 'bg-red-500 text-white'
-                                : 'bg-gray-200 text-gray-700 hover:bg-red-400'
+                                ? 'bg-red-500 text-white shadow-md'
+                                : 'bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-700'
                             }`}
                           >
-                            👎 改善を
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
+                            </svg>
+                            改善を
                           </button>
                         </div>
                       )}
 
-                      <p className="text-xs opacity-50 mt-2">
-                        {new Date(message.timestamp).toLocaleTimeString('ja-JP')}
+                      <p className={`text-xs mt-2 ${
+                        message.role === 'user' ? 'text-blue-100' : 'text-gray-400'
+                      }`}>
+                        {new Date(message.timestamp).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                   </div>
                 ))}
+                {/* Typing Indicator */}
+                {loading && (
+                  <div className="flex justify-start mb-4">
+                    <div className="max-w-[85%] sm:max-w-2xl px-4 py-3 rounded-2xl rounded-bl-sm bg-white border border-gray-200 shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+                          <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                          </svg>
+                        </div>
+                        <div className="flex gap-1">
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div ref={messagesEndRef} />
               </>
             )}
@@ -474,8 +583,8 @@ export default function ChatPage() {
           )}
 
           {/* Input Area */}
-          <div className="border-t border-gray-200 p-6">
-            <div className="flex gap-2">
+          <div className="border-t border-gray-200 p-4 sm:p-6 bg-white">
+            <div className="flex gap-2 sm:gap-3">
               <input
                 type="text"
                 value={input}
@@ -488,14 +597,31 @@ export default function ChatPage() {
                 }}
                 placeholder="質問を入力してください... (Enterで送信)"
                 disabled={loading}
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 text-sm sm:text-base transition-all"
               />
               <button
                 onClick={handleSendMessage}
                 disabled={loading || !input.trim()}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-4 sm:px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg font-medium text-sm sm:text-base"
               >
-                {loading ? '送信中...' : '送信'}
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span className="hidden sm:inline">送信中...</span>
+                    <span className="sm:hidden">送信中</span>
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                    <span className="hidden sm:inline">送信</span>
+                    <span className="sm:hidden">送信</span>
+                  </span>
+                )}
               </button>
             </div>
           </div>
