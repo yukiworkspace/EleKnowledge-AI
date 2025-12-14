@@ -415,35 +415,35 @@ export default function ChatPage() {
   return (
     <div className="h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4 flex justify-between items-center flex-shrink-0 shadow-sm backdrop-blur-sm bg-white/95">
-        <div className="flex items-center gap-3">
+      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-2 flex justify-between items-center flex-shrink-0 shadow-sm backdrop-blur-sm bg-white/95">
+        <div className="flex items-center gap-2.5">
           {/* Mobile Menu Button */}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+            className="md:hidden p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
             aria-label="メニューを開く"
           >
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="flex items-center gap-1.5">
+            <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
               </svg>
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">EleKnowledge-AI</h1>
-              <span className="hidden sm:inline-block text-xs text-gray-500 mt-0.5">RAGチャット</span>
+              <h1 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">EleKnowledge-AI</h1>
+              <span className="hidden sm:inline-block text-[10px] text-gray-500 mt-0 leading-tight">RAGチャット</span>
             </div>
           </div>
         </div>
         <Link
           href="/"
-          className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+          className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
         >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
           </svg>
           <span className="hidden sm:inline">ホームへ戻る</span>
@@ -641,7 +641,7 @@ export default function ChatPage() {
           <div 
             ref={messagesContainerRef}
             className="flex-1 overflow-y-auto p-2.5 sm:p-4 lg:p-5 min-h-0 max-h-full scroll-smooth"
-            style={{ maxHeight: 'calc(100vh - 170px)' }}
+            style={{ maxHeight: 'calc(100vh - 150px)' }}
           >
             {messages.length === 0 ? (
               <div className="flex items-center justify-center h-full w-full min-w-0" style={{ flexDirection: 'row', writingMode: 'horizontal-tb' }}>
