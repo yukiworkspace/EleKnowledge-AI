@@ -66,6 +66,19 @@ export default function ChatPage() {
   // 初期化：ユーザー情報取得とセッション読み込み
   useEffect(() => {
     const initializeChat = async () => {
+      // 開発モード: 認証をスキップする場合
+      const skipAuth = process.env.NEXT_PUBLIC_SKIP_AUTH === 'true';
+      
+      if (skipAuth) {
+        // モックユーザーIDを設定
+        const mockUserId = 'dev-user-123';
+        setUserId(mockUserId);
+        // セッション取得はスキップ（APIが利用できないため）
+        setIsLoadingSessions(false);
+        setSessions([]);
+        return;
+      }
+
       try {
         const user = await getCurrentUser();
         const subId = user.userId;

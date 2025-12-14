@@ -16,6 +16,20 @@ export default function HomePage() {
   }, []);
 
   const checkUser = async () => {
+    // 開発モード: 認証をスキップする場合
+    const skipAuth = process.env.NEXT_PUBLIC_SKIP_AUTH === 'true';
+    
+    if (skipAuth) {
+      // モックユーザーデータを設定
+      setUser({ userId: 'dev-user-123', username: 'dev@example.com' });
+      setUserAttributes({ 
+        email: 'dev@example.com', 
+        name: '開発ユーザー' 
+      });
+      setLoading(false);
+      return;
+    }
+
     try {
       const currentUser = await getCurrentUser();
       const attributes = await fetchUserAttributes();
