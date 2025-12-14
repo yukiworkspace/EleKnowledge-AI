@@ -1,0 +1,19 @@
+﻿[
+  {
+    "Name": "AllowWhitelistIPs",
+    "Priority": 0,
+    "Statement": {
+      "IPSetReferenceStatement": {
+        "ARN": "arn:aws:wafv2:us-east-1:423623870147:global/ipset/EleKnowledge-IP-Whitelist/5c914c9e-2bf2-4ba1-841f-42cfb288f203"
+      }
+    },
+    "Action": {
+      "Allow": {}
+    },
+    "VisibilityConfig": {
+      "SampledRequestsEnabled": true,
+      "CloudWatchMetricsEnabled": true,
+      "MetricName": "AllowWhitelistIPs"
+    }
+  }
+]

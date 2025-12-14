@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { getCurrentUser, fetchUserAttributes, signOut } from 'aws-amplify/auth';
 
 export default function HomePage() {
@@ -111,43 +112,51 @@ export default function HomePage() {
 
         {/* Feature Cards */}
         <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="bg-white shadow rounded-lg p-6">
-            <div className="flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white mb-4">
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
+          <Link href="/chat" className="group">
+            <div className="bg-white shadow rounded-lg p-6 group-hover:shadow-lg transition-shadow cursor-pointer h-full">
+              <div className="flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white mb-4 group-hover:bg-blue-600 transition-colors">
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 group-hover:text-blue-600 transition-colors">🤖 RAGチャット</h3>
+              <p className="mt-2 text-sm text-gray-600">
+                Knowledge Baseを検索して質問に答える
+              </p>
+              <p className="mt-3 inline-block px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
+                ✓ 利用可能 (Phase 2)
+              </p>
             </div>
-            <h3 className="text-lg font-medium text-gray-900">ドキュメント管理</h3>
-            <p className="mt-2 text-sm text-gray-600">
-              社内ドキュメントのアップロードと管理
-            </p>
-            <p className="mt-2 text-xs text-gray-500">Coming Soon (Phase 2)</p>
-          </div>
+          </Link>
 
-          <div className="bg-white shadow rounded-lg p-6">
-            <div className="flex items-center justify-center h-12 w-12 rounded-md bg-green-500 text-white mb-4">
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-medium text-gray-900">AI チャット</h3>
-            <p className="mt-2 text-sm text-gray-600">
-              RAGを活用した質問応答システム
-            </p>
-            <p className="mt-2 text-xs text-gray-500">Coming Soon (Phase 2)</p>
-          </div>
-
-          <div className="bg-white shadow rounded-lg p-6">
+          <div className="bg-white shadow rounded-lg p-6 opacity-60">
             <div className="flex items-center justify-center h-12 w-12 rounded-md bg-purple-500 text-white mb-4">
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m6 2a8 8 0 11-16 0 8 8 0 0116 0zm-5-3v8l6 3" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900">🔧 トラブルシューティング</h3>
+            <p className="mt-2 text-sm text-gray-600">
+              現場トラブルの原因分析と対処方法提案
+            </p>
+            <p className="mt-3 inline-block px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded-full">
+              🚧 開発中 (Phase 3)
+            </p>
+          </div>
+
+          <div className="bg-white shadow rounded-lg p-6 opacity-60">
+            <div className="flex items-center justify-center h-12 w-12 rounded-md bg-green-500 text-white mb-4">
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-gray-900">分析ダッシュボード</h3>
+            <h3 className="text-lg font-medium text-gray-900">✅ 品質書類チェック</h3>
             <p className="mt-2 text-sm text-gray-600">
-              利用状況とインサイトの可視化
+              技評写真の自動判定と品質管理
             </p>
-            <p className="mt-2 text-xs text-gray-500">Coming Soon (Phase 3)</p>
+            <p className="mt-3 inline-block px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded-full">
+              🚧 開発中 (Phase 3)
+            </p>
           </div>
         </div>
       </main>

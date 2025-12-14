@@ -1,0 +1,36 @@
+version: 1
+
+# Amplifyビルド設定ファイル
+# モノレポ構成でfrontend/ディレクトリをホストする場合の設定
+
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - echo "Installing dependencies..."
+        - cd frontend && npm install
+        - echo "Setting up environment variables..."
+    build:
+      commands:
+        - echo "Building Next.js application..."
+        - npm run build
+    postBuild:
+      commands:
+        - echo "Build completed successfully"
+  artifacts:
+    baseDirectory: frontend/out
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - frontend/node_modules/**/*
+
+redirects:
+  - source: '</^[^.]+$|\.(?!js$|css$|ico$|png$|jpg$|jpeg$|svg$|gif$|webp$)(?:[^.]+)$/>'
+    status: 200
+    target: '/index.html'
+
+env:
+  variables:
+    NODE_ENV: production
+    NEXT_PUBLIC_AWS_REGION: us-east-1

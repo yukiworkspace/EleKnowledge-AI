@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { signIn } from 'aws-amplify/auth';
+import { signIn, signOut } from 'aws-amplify/auth';
 import Link from 'next/link';
 
 export default function LoginPage() {
@@ -11,6 +11,31 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [cacheClearAttempted, setCacheClearAttempted] = useState(false);
+
+  // ログインページ読み込み時にキャッシュをクリア
+  useEffect(() => {
+    const clearAuthCache = async () => {
+      try {
+        // 前のセッションをクリア
+        await signOut({ global: true });
+        
+        // ローカルストレージをクリア
+        if (typeof window !== 'undefined') {
+          localStorage.clear();
+          sessionStorage.clear();
+        }
+        
+        setCacheClearAttempted(true);
+        console.log('Auth cache cleared successfully');
+      } catch (err) {
+        console.log('Cache clear completed (already signed out or first visit)');
+        setCacheClearAttempted(true);
+      }
+    };
+
+    clearAuthCache();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,22 +43,45 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      // クレデンシャル情報をトリム
+      const trimmedEmail = email.trim();
+      const trimmedPassword = password.trim();
+
+      if (!trimmedEmail || !trimmedPassword) {
+        setError('メールアドレスとパスワードを入力してください');
+        setLoading(false);
+        return;
+      }
+
+      // サインイン実行
       await signIn({
-        username: email,
-        password: password,
+        username: trimmedEmail,
+        password: trimmedPassword,
       });
-      
+
+      console.log('Sign in successful');
       router.push('/');
     } catch (err: any) {
-      console.error('Login error:', err);
+      console.error('Login error details:', {
+        name: err.name,
+        code: err.code,
+        message: err.message,
+        timestamp: new Date().toISOString()
+      });
       
       if (err.name === 'UserNotConfirmedException') {
         setError('メールアドレスの確認が必要です。確認メールをチェックしてください。');
         router.push(`/verify?email=${encodeURIComponent(email)}`);
       } else if (err.name === 'NotAuthorizedException') {
         setError('メールアドレスまたはパスワードが正しくありません。');
+      } else if (err.name === 'UserNotFoundException') {
+        setError('このメールアドレスで登録されたアカウントが見つかりません。');
+      } else if (err.name === 'TooManyRequestsException') {
+        setError('ログイン試行が多すぎます。後でもう一度お試しください。');
+      } else if (err.message?.includes('Network')) {
+        setError('ネットワーク接続エラーです。インターネット接続を確認してください。');
       } else {
-        setError('ログインに失敗しました。もう一度お試しください。');
+        setError(`ログインに失敗しました: ${err.message || 'Unknown error'}`);
       }
     } finally {
       setLoading(false);
@@ -104,7 +152,13 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <div className="text-sm text-center">
+          <div className="flex justify-between text-sm">
+            <Link
+              href="/forgot-password"
+              className="font-medium text-blue-600 hover:text-blue-500"
+            >
+              パスワードを忘れた
+            </Link>
             <Link
               href="/signup"
               className="font-medium text-blue-600 hover:text-blue-500"
