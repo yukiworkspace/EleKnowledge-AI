@@ -8,7 +8,7 @@ frontend:
     preBuild:
       commands:
         - echo "Installing dependencies..."
-        - npm install
+        - cd frontend && npm install
         - echo "Setting up environment variables..."
     build:
       commands:
