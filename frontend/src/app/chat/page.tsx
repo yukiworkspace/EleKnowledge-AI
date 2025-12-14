@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
 import axios from 'axios';
+import ReactMarkdown from 'react-markdown';
+import type { Components } from 'react-markdown';
 
 interface Message {
   id: string;
@@ -54,6 +56,34 @@ export default function ChatPage() {
 
   const API_URL = process.env.NEXT_PUBLIC_RAG_API_URL || '';
   const CHAT_API_URL = process.env.NEXT_PUBLIC_CHAT_API_URL || '';
+
+  const markdownComponents: Components = {
+    p: ({ children }: any) => <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>,
+    h1: ({ children }: any) => <h1 className="text-xl font-bold mb-3 mt-3 first:mt-0">{children}</h1>,
+    h2: ({ children }: any) => <h2 className="text-lg font-bold mb-2 mt-3 first:mt-0">{children}</h2>,
+    h3: ({ children }: any) => <h3 className="text-base font-semibold mb-2 mt-2 first:mt-0">{children}</h3>,
+    ul: ({ children }: any) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
+    ol: ({ children }: any) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
+    li: ({ children }: any) => <li className="ml-2">{children}</li>,
+    code: ({ children, className, ...props }: any) => {
+      const isInline = !className;
+      if (isInline) {
+        return <code className="bg-gray-100 px-1.5 py-0.5 rounded text-sm font-mono text-blue-600" {...props}>{children}</code>;
+      }
+      return <code className="block bg-gray-900 text-gray-100 p-3 rounded-lg text-sm font-mono overflow-x-auto mb-3" {...props}>{children}</code>;
+    },
+    pre: ({ children }: any) => {
+      const child = children as any;
+      if (child?.props?.className?.includes('language-')) {
+        return <pre className="bg-gray-900 text-gray-100 p-3 rounded-lg overflow-x-auto mb-3">{children}</pre>;
+      }
+      return <pre className="bg-gray-100 p-3 rounded-lg overflow-x-auto mb-3">{children}</pre>;
+    },
+    blockquote: ({ children }: any) => <blockquote className="border-l-4 border-blue-500 pl-4 italic my-3 text-gray-600">{children}</blockquote>,
+    a: ({ href, children }: any) => <a href={href} className="text-blue-600 hover:text-blue-700 underline" target="_blank" rel="noopener noreferrer">{children}</a>,
+    strong: ({ children }: any) => <strong className="font-semibold">{children}</strong>,
+    em: ({ children }: any) => <em className="italic">{children}</em>,
+  };
 
   // 認可トークン取得関数
   const getAuthToken = async (): Promise<string | null> => {
@@ -492,7 +522,7 @@ export default function ChatPage() {
                     ...selectedFilters,
                     documentType: e.target.value
                   })}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-500 placeholder:opacity-100 transition-all bg-white hover:border-gray-400"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-500 placeholder:opacity-100 transition-all bg-white hover:border-gray-400 text-gray-900"
                 />
               </div>
               <div>
@@ -505,7 +535,7 @@ export default function ChatPage() {
                     ...selectedFilters,
                     product: e.target.value
                   })}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-500 placeholder:opacity-100 transition-all bg-white hover:border-gray-400"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-500 placeholder:opacity-100 transition-all bg-white hover:border-gray-400 text-gray-900"
                 />
               </div>
               <div>
@@ -518,7 +548,7 @@ export default function ChatPage() {
                     ...selectedFilters,
                     model: e.target.value
                   })}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-500 placeholder:opacity-100 transition-all bg-white hover:border-gray-400"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-500 placeholder:opacity-100 transition-all bg-white hover:border-gray-400 text-gray-900"
                 />
               </div>
               {(selectedFilters.documentType || selectedFilters.product || selectedFilters.model) && (
@@ -550,7 +580,7 @@ export default function ChatPage() {
                       </svg>
                     </div>
                   </div>
-                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 break-words whitespace-normal leading-tight" style={{ writingMode: 'horizontal-tb', textOrientation: 'mixed' }}>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 whitespace-nowrap leading-tight" style={{ writingMode: 'horizontal-tb', textOrientation: 'mixed' }}>
                     EleKnowledge-AIへようこそ！
                   </h2>
                   <p className="text-gray-600 text-base sm:text-lg mb-6 break-words whitespace-normal leading-relaxed" style={{ writingMode: 'horizontal-tb', textOrientation: 'mixed' }}>
@@ -564,7 +594,7 @@ export default function ChatPage() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-5">
+              <div className="space-y-4 max-w-5xl mx-auto w-full px-2 sm:px-4">
               <>
                 {messages.map((message, index) => (
                   <div
@@ -575,11 +605,12 @@ export default function ChatPage() {
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
                     <div
-                      className={`min-w-[200px] max-w-[85%] sm:max-w-2xl px-5 py-4 rounded-2xl shadow-md break-words flex-shrink-0 transition-all duration-200 hover:shadow-lg ${
+                      className={`px-5 py-4 rounded-2xl shadow-md break-words flex-shrink-0 transition-all duration-200 hover:shadow-lg ${
                         message.role === 'user'
-                          ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-br-sm'
-                          : 'bg-white border border-gray-200 text-gray-900 rounded-bl-sm hover:border-gray-300'
+                          ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-br-sm max-w-[72%] sm:max-w-[70%] lg:max-w-[65%]'
+                          : 'bg-white border border-gray-200 text-gray-900 rounded-bl-sm hover:border-gray-300 max-w-full sm:max-w-[92%] lg:max-w-[98%]'
                       }`}
+                      style={{ minWidth: '200px' }}
                     >
                       {/* Role Indicator */}
                       <div className={`flex items-center gap-2 mb-2.5 ${
@@ -601,16 +632,24 @@ export default function ChatPage() {
                       </div>
 
                       <div className="w-full">
-                        {message.role === 'assistant' && streamingMessageId === message.id ? (
-                          <p className={`whitespace-pre-wrap break-words text-base leading-relaxed font-normal text-gray-800`}>
-                            {streamingMessages[message.id] || ''}
-                            <span className="inline-block w-2 h-5 bg-blue-500 ml-1 animate-pulse" />
-                          </p>
+                        {message.role === 'assistant' ? (
+                          <div className="chat-markdown text-gray-800">
+                            {streamingMessageId === message.id ? (
+                              <>
+                                <ReactMarkdown components={markdownComponents}>
+                                  {streamingMessages[message.id] || ''}
+                                </ReactMarkdown>
+                                <span className="inline-block w-2 h-5 bg-blue-500 ml-1 animate-pulse" />
+                              </>
+                            ) : (
+                              <ReactMarkdown components={markdownComponents}>
+                                {streamingMessages[message.id] || message.content}
+                              </ReactMarkdown>
+                            )}
+                          </div>
                         ) : (
-                          <p className={`whitespace-pre-wrap break-words text-base leading-relaxed font-normal ${
-                            message.role === 'user' ? 'text-white' : 'text-gray-800'
-                          }`}>
-                            {message.role === 'assistant' ? (streamingMessages[message.id] || message.content) : message.content}
+                          <p className={`whitespace-pre-wrap break-words text-base leading-relaxed font-normal text-white`}>
+                            {message.content}
                           </p>
                         )}
                       </div>
@@ -736,7 +775,7 @@ export default function ChatPage() {
           )}
 
           {/* Input Area */}
-          <div className="border-t border-gray-200 bg-white flex-shrink-0">
+          <div className="border-t border-gray-200 bg-white/95 backdrop-blur sticky bottom-0 z-10 flex-shrink-0">
             <div className="p-4 sm:p-6">
               <div className="flex gap-2 sm:gap-3 items-end">
                 <div className="flex-1 relative">
@@ -752,7 +791,7 @@ export default function ChatPage() {
                     }}
                     placeholder="質問を入力してください... (Enterで送信)"
                     disabled={loading}
-                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 text-sm sm:text-base transition-all placeholder:text-gray-500 placeholder:opacity-100 shadow-sm hover:border-gray-400 bg-white"
+                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 text-sm sm:text-base transition-all placeholder:text-gray-500 placeholder:opacity-100 shadow-sm hover:border-gray-400 bg-white text-gray-900"
                   />
                   {input.trim() && (
                     <button
