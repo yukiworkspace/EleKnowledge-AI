@@ -37,6 +37,7 @@ interface Session {
 export default function ChatPage() {
   const router = useRouter();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [currentSession, setCurrentSession] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -48,6 +49,7 @@ export default function ChatPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState({
     documentType: '',
     product: '',
@@ -161,13 +163,42 @@ export default function ChatPage() {
 
   // メッセージ自動スクロール（最適化）
   useEffect(() => {
-    if (messagesEndRef.current) {
+    if (messagesEndRef.current && messagesContainerRef.current) {
       const timer = setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        const container = messagesContainerRef.current;
+        if (container) {
+          const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 200;
+          if (isNearBottom || loading) {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            setShowScrollButton(false);
+          }
+        }
       }, 100);
       return () => clearTimeout(timer);
     }
   }, [messages, loading, streamingMessages]);
+
+  // スクロール位置を監視してスクロールボタンの表示を制御
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 200;
+      setShowScrollButton(!isNearBottom && messages.length > 0);
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    handleScroll(); // 初期状態をチェック
+
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [messages.length]);
+
+  // 最新の会話にスクロール
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    setShowScrollButton(false);
+  };
 
   const fetchSessions = async (subId: string) => {
     try {
@@ -446,7 +477,7 @@ export default function ChatPage() {
           </div>
 
           {/* Session List */}
-          <div className="flex-1 overflow-y-auto min-h-0">
+          <div className="flex-1 overflow-y-auto min-h-0 scroll-smooth">
             {isLoadingSessions ? (
               <div className="p-4 text-center text-gray-500">
                 読み込み中...
@@ -567,9 +598,12 @@ export default function ChatPage() {
         </div>
 
         {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col bg-white">
+        <div className="flex-1 flex flex-col bg-white relative">
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 min-h-0 scroll-smooth">
+          <div 
+            ref={messagesContainerRef}
+            className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 min-h-0 scroll-smooth"
+          >
             {messages.length === 0 ? (
               <div className="flex items-center justify-center h-full w-full min-w-0" style={{ flexDirection: 'row', writingMode: 'horizontal-tb' }}>
                 <div className="text-center w-full max-w-md px-4 mx-auto" style={{ width: '100%', maxWidth: '28rem' }}>
@@ -753,6 +787,21 @@ export default function ChatPage() {
             )}
           </div>
 
+          {/* Scroll to Bottom Button - ChatGPT style */}
+          {showScrollButton && messages.length > 0 && (
+            <div className="absolute bottom-20 right-4 sm:right-6 z-20">
+              <button
+                onClick={scrollToBottom}
+                className="p-2.5 bg-white border border-gray-300 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:bg-gray-50 group animate-fade-in"
+                aria-label="最新の会話にスクロール"
+              >
+                <svg className="w-5 h-5 text-gray-700 group-hover:text-blue-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+              </button>
+            </div>
+          )}
+
           {/* Error Message */}
           {error && (
             <div className="border-t border-red-200 bg-red-50 px-4 sm:px-6 py-3 flex-shrink-0">
@@ -774,8 +823,8 @@ export default function ChatPage() {
             </div>
           )}
 
-          {/* Input Area */}
-          <div className="border-t border-gray-200 bg-white/95 backdrop-blur sticky bottom-0 z-10 flex-shrink-0">
+          {/* Input Area - Fixed at bottom */}
+          <div className="border-t border-gray-200 bg-white/95 backdrop-blur-sm sticky bottom-0 z-10 flex-shrink-0 shadow-lg">
             <div className="p-4 sm:p-6">
               <div className="flex gap-2 sm:gap-3 items-end">
                 <div className="flex-1 relative">
