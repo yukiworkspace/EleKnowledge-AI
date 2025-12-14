@@ -13,7 +13,7 @@ frontend:
     build:
       commands:
         - echo "Building Next.js application..."
-        - npm run build
+        - cd frontend && npm run build
     postBuild:
       commands:
         - echo "Build completed successfully"
