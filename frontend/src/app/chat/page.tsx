@@ -500,7 +500,7 @@ export default function ChatPage() {
                 セッションはまだありません
               </div>
             ) : (
-              <div className="space-y-1 p-2">
+              <div className="space-y-1 p-1.5">
                 {sessions.map((session, index) => (
                   <div
                     key={session.sessionId}
@@ -508,7 +508,7 @@ export default function ChatPage() {
                       fetchSessionMessages(session.sessionId);
                       setSidebarOpen(false);
                     }}
-                    className={`p-3 rounded-lg cursor-pointer transition-all duration-200 group ${
+                    className={`p-2.5 rounded-lg cursor-pointer transition-all duration-200 group ${
                       currentSession === session.sessionId
                         ? 'bg-gradient-to-r from-blue-50 to-blue-100/50 border-l-4 border-blue-600 shadow-sm'
                         : 'hover:bg-gray-50 hover:shadow-sm'
@@ -520,8 +520,10 @@ export default function ChatPage() {
                         <p className="font-medium text-sm text-gray-900 truncate">
                           {session.title}
                         </p>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          {session.messageCount}件のメッセージ
+                        <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-2">
+                          <span>{session.messageCount}件</span>
+                          <span className="text-gray-400">・</span>
+                          <span className="text-gray-500">残り {session.daysUntilDeletion} 日</span>
                         </p>
                       </div>
                       <button
@@ -538,9 +540,6 @@ export default function ChatPage() {
                         </svg>
                       </button>
                     </div>
-                    <p className="text-xs text-gray-400 mt-1.5">
-                      残り {session.daysUntilDeletion} 日
-                    </p>
                   </div>
                 ))}
               </div>
@@ -726,21 +725,21 @@ export default function ChatPage() {
                         const isOpen = showAllCitations[message.id];
 
                         return (
-                          <div className="mt-4 pt-3 border-t border-gray-200 space-y-2">
+                          <div className="mt-3 pt-2 border-t border-gray-200 space-y-1.5">
                             <p className="text-sm font-semibold text-gray-700 mb-2.5 flex items-center gap-1.5">
                               <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                               </svg>
                               参考資料
                             </p>
-                            <div className="space-y-2">
+                            <div className="space-y-1.5">
                               {primaryDocs.map((doc, idx) => (
                                 <a
                                   key={`${doc.sourceUri || doc.documentName}-${idx}`}
                                   href={doc.sourceUri}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 hover:underline transition-all duration-200 p-2 rounded-lg hover:bg-blue-50 group"
+                                  className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 hover:underline transition-all duration-200 p-1.5 rounded-lg hover:bg-blue-50 group"
                                 >
                                   <svg className="w-4 h-4 flex-shrink-0 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -751,10 +750,10 @@ export default function ChatPage() {
                               ))}
 
                               {extraDocs.length > 0 && (
-                                <div className="space-y-2">
+                                <div className="space-y-1.5">
                                   <button
                                     onClick={() => setShowAllCitations(prev => ({ ...prev, [message.id]: !prev[message.id] }))}
-                                    className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                                    className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1.5"
                                     aria-expanded={isOpen}
                                   >
                                     <svg className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -763,14 +762,14 @@ export default function ChatPage() {
                                     {isOpen ? '折りたたむ' : `さらに ${extraDocs.length} 件表示`}
                                   </button>
                                   {isOpen && (
-                                    <div className="space-y-2">
+                                    <div className="space-y-1.5">
                                       {extraDocs.map((doc, idx) => (
                                         <a
                                           key={`${doc.sourceUri || doc.documentName}-extra-${idx}`}
                                           href={doc.sourceUri}
                                           target="_blank"
                                           rel="noopener noreferrer"
-                                          className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 hover:underline transition-all duration-200 p-2 rounded-lg hover:bg-blue-50 group"
+                                          className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 hover:underline transition-all duration-200 p-1.5 rounded-lg hover:bg-blue-50 group"
                                         >
                                           <svg className="w-4 h-4 flex-shrink-0 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
