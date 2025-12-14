@@ -495,7 +495,14 @@ export default function ChatPage() {
           </div>
 
           {/* Session List */}
-          <div className="flex-1 overflow-y-auto min-h-0 max-h-full scroll-smooth" style={{ maxHeight: 'calc(100vh - 300px)' }}>
+          <div 
+            className="flex-1 overflow-y-auto min-h-0 max-h-full scroll-smooth" 
+            style={{ 
+              maxHeight: showFilters 
+                ? 'calc(100vh - 310px)' 
+                : 'calc(100vh - 180px)' 
+            }}
+          >
             {isLoadingSessions ? (
               <div className="p-4 text-center text-gray-500">
                 読み込み中...
@@ -552,10 +559,10 @@ export default function ChatPage() {
           </div>
 
           {/* Filters Section - Fixed at bottom with accordion */}
-          <div className="border-t border-gray-200 p-3 bg-gradient-to-b from-gray-50 to-white flex-shrink-0 shadow-inner">
+          <div className="border-t border-gray-200 bg-gradient-to-b from-gray-50 to-white flex-shrink-0 shadow-inner mt-auto">
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="w-full flex items-center justify-between text-sm font-semibold text-gray-700"
+              className="w-full flex items-center justify-between text-sm font-semibold text-gray-700 p-2.5"
               aria-expanded={showFilters}
             >
               <span className="flex items-center gap-1.5">
@@ -570,7 +577,7 @@ export default function ChatPage() {
             </button>
 
             {showFilters && (
-              <div className="mt-3 space-y-2">
+              <div className="px-2.5 pb-2.5 space-y-2">
                 <div>
                   <label className="block text-xs text-gray-600 mb-1">資料タイプ</label>
                   <input
