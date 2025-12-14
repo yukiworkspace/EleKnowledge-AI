@@ -51,6 +51,7 @@ export default function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [showAllCitations, setShowAllCitations] = useState<Record<string, boolean>>({});
   const [selectedFilters, setSelectedFilters] = useState({
     documentType: '',
     product: '',
@@ -59,6 +60,17 @@ export default function ChatPage() {
 
   const API_URL = process.env.NEXT_PUBLIC_RAG_API_URL || '';
   const CHAT_API_URL = process.env.NEXT_PUBLIC_CHAT_API_URL || '';
+
+  const getUniqueDocs = (docs: Message['sourceDocuments'] = []) => {
+    const seen = new Set<string>();
+    return docs.filter((doc) => {
+      const key = doc.sourceUri || doc.documentName || '';
+      if (!key) return true;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  };
 
   const markdownComponents: Components = {
     p: ({ children }: any) => <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>,
@@ -617,8 +629,8 @@ export default function ChatPage() {
           {/* Messages Area */}
           <div 
             ref={messagesContainerRef}
-            className="flex-1 overflow-y-auto p-3 sm:p-5 lg:p-6 min-h-0 max-h-full scroll-smooth"
-            style={{ maxHeight: 'calc(100vh - 190px)' }}
+            className="flex-1 overflow-y-auto p-2.5 sm:p-4 lg:p-5 min-h-0 max-h-full scroll-smooth"
+            style={{ maxHeight: 'calc(100vh - 170px)' }}
           >
             {messages.length === 0 ? (
               <div className="flex items-center justify-center h-full w-full min-w-0" style={{ flexDirection: 'row', writingMode: 'horizontal-tb' }}>
@@ -644,7 +656,7 @@ export default function ChatPage() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-3 max-w-4xl mx-auto w-full px-2 sm:px-3">
+              <div className="space-y-2.5 max-w-4xl mx-auto w-full px-2 sm:px-3">
               <>
                 {messages.map((message, index) => (
                   <div
@@ -655,12 +667,12 @@ export default function ChatPage() {
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
                     <div
-                      className={`px-4 py-3 rounded-2xl shadow-md break-words flex-shrink-0 transition-all duration-200 hover:shadow-lg ${
+                      className={`px-3.5 py-2.5 rounded-2xl shadow-md break-words flex-shrink-0 transition-all duration-200 hover:shadow-lg ${
                         message.role === 'user'
-                          ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-br-sm max-w-[68%] sm:max-w-[65%] lg:max-w-[60%]'
-                          : 'bg-white border border-gray-200 text-gray-900 rounded-bl-sm hover:border-gray-300 max-w-full sm:max-w-[88%] lg:max-w-[95%]'
+                          ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-br-sm max-w-[66%] sm:max-w-[62%] lg:max-w-[58%]'
+                          : 'bg-white border border-gray-200 text-gray-900 rounded-bl-sm hover:border-gray-300 max-w-full sm:max-w-[86%] lg:max-w-[93%]'
                       }`}
-                      style={{ minWidth: '180px' }}
+                      style={{ minWidth: '170px' }}
                     >
                       {/* Role Indicator */}
                       <div className={`flex items-center gap-2 mb-2.5 ${
@@ -683,7 +695,7 @@ export default function ChatPage() {
 
                       <div className="w-full">
                         {message.role === 'assistant' ? (
-                          <div className="chat-markdown text-gray-800 text-sm sm:text-[15px]">
+                          <div className="chat-markdown text-gray-800 text-[13px] sm:text-[14px]">
                             {streamingMessageId === message.id ? (
                               <>
                                 <ReactMarkdown components={markdownComponents}>
@@ -698,7 +710,7 @@ export default function ChatPage() {
                             )}
                           </div>
                         ) : (
-                          <p className={`whitespace-pre-wrap break-words text-sm leading-relaxed font-normal text-white`}>
+                          <p className={`whitespace-pre-wrap break-words text-[13px] leading-relaxed font-normal text-white`}>
                             {message.content}
                           </p>
                         )}
@@ -706,33 +718,75 @@ export default function ChatPage() {
 
                       {/* Citations */}
                       {message.role === 'assistant' && message.sourceDocuments && message.sourceDocuments.length > 0 && 
-                       (!streamingMessageId || streamingMessageId !== message.id || (streamingMessages[message.id] || '').length >= message.content.length) && (
-                        <div className="mt-4 pt-3 border-t border-gray-200 space-y-2">
-                          <p className="text-sm font-semibold text-gray-700 mb-2.5 flex items-center gap-1.5">
-                            <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            参考資料
-                          </p>
-                          <div className="space-y-2">
-                            {message.sourceDocuments.map((doc, idx) => (
-                              <a
-                                key={idx}
-                                href={doc.sourceUri}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 hover:underline transition-all duration-200 p-2 rounded-lg hover:bg-blue-50 group"
-                              >
-                                <svg className="w-4 h-4 flex-shrink-0 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                <span className="truncate flex-1">{doc.documentName}</span>
-                                <span className="text-gray-500 text-xs bg-gray-100 px-2 py-0.5 rounded-full">{(doc.relevance * 100).toFixed(0)}%</span>
-                              </a>
-                            ))}
+                       (!streamingMessageId || streamingMessageId !== message.id || (streamingMessages[message.id] || '').length >= message.content.length) && (() => {
+                        const uniqueDocs = getUniqueDocs(message.sourceDocuments);
+                        if (!uniqueDocs.length) return null;
+                        const primaryDocs = uniqueDocs.slice(0, 3);
+                        const extraDocs = uniqueDocs.slice(3);
+                        const isOpen = showAllCitations[message.id];
+
+                        return (
+                          <div className="mt-4 pt-3 border-t border-gray-200 space-y-2">
+                            <p className="text-sm font-semibold text-gray-700 mb-2.5 flex items-center gap-1.5">
+                              <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              参考資料
+                            </p>
+                            <div className="space-y-2">
+                              {primaryDocs.map((doc, idx) => (
+                                <a
+                                  key={`${doc.sourceUri || doc.documentName}-${idx}`}
+                                  href={doc.sourceUri}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 hover:underline transition-all duration-200 p-2 rounded-lg hover:bg-blue-50 group"
+                                >
+                                  <svg className="w-4 h-4 flex-shrink-0 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                  </svg>
+                                  <span className="truncate flex-1">{doc.documentName}</span>
+                                  <span className="text-gray-500 text-xs bg-gray-100 px-2 py-0.5 rounded-full">{(doc.relevance * 100).toFixed(0)}%</span>
+                                </a>
+                              ))}
+
+                              {extraDocs.length > 0 && (
+                                <div className="space-y-2">
+                                  <button
+                                    onClick={() => setShowAllCitations(prev => ({ ...prev, [message.id]: !prev[message.id] }))}
+                                    className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                                    aria-expanded={isOpen}
+                                  >
+                                    <svg className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                    {isOpen ? '折りたたむ' : `さらに ${extraDocs.length} 件表示`}
+                                  </button>
+                                  {isOpen && (
+                                    <div className="space-y-2">
+                                      {extraDocs.map((doc, idx) => (
+                                        <a
+                                          key={`${doc.sourceUri || doc.documentName}-extra-${idx}`}
+                                          href={doc.sourceUri}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 hover:underline transition-all duration-200 p-2 rounded-lg hover:bg-blue-50 group"
+                                        >
+                                          <svg className="w-4 h-4 flex-shrink-0 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                          </svg>
+                                          <span className="truncate flex-1">{doc.documentName}</span>
+                                          <span className="text-gray-500 text-xs bg-gray-100 px-2 py-0.5 rounded-full">{(doc.relevance * 100).toFixed(0)}%</span>
+                                        </a>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        );
+                      })()}
 
                       {/* Feedback Buttons */}
                       {message.role === 'assistant' && 
