@@ -277,25 +277,37 @@ export default function ChatPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4 flex justify-between items-center">
+      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4 flex justify-between items-center flex-shrink-0 shadow-sm">
         <div className="flex items-center gap-3">
           {/* Mobile Menu Button */}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="md:hidden p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
             aria-label="メニューを開く"
           >
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">EleKnowledge-AI</h1>
-          <span className="hidden sm:inline text-sm text-gray-500">📚 RAGチャット</span>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">EleKnowledge-AI</h1>
+              <span className="hidden sm:inline-block text-xs text-gray-500 mt-0.5">RAGチャット</span>
+            </div>
+          </div>
         </div>
         <Link
           href="/"
-          className="inline-flex items-center px-3 sm:px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
         >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
           <span className="hidden sm:inline">ホームへ戻る</span>
           <span className="sm:hidden">ホーム</span>
         </Link>
@@ -311,11 +323,11 @@ export default function ChatPage() {
         )}
 
         {/* Sidebar - Session List */}
-        <div className={`fixed md:static inset-y-0 left-0 z-50 md:z-auto w-64 bg-white border-r border-gray-200 flex flex-col transform transition-transform duration-300 ease-in-out ${
+        <div className={`fixed md:static inset-y-0 left-0 z-50 md:z-auto w-64 bg-white border-r border-gray-200 flex flex-col h-full transform transition-transform duration-300 ease-in-out ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}>
           {/* Mobile Sidebar Header */}
-          <div className="md:hidden flex items-center justify-between p-4 border-b border-gray-200">
+          <div className="md:hidden flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
             <h2 className="text-lg font-semibold text-gray-900">メニュー</h2>
             <button
               onClick={() => setSidebarOpen(false)}
@@ -329,18 +341,20 @@ export default function ChatPage() {
           </div>
 
           {/* New Session Button */}
-          <button
-            onClick={() => {
-              handleNewSession();
-              setSidebarOpen(false);
-            }}
-            className="m-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-          >
-            + 新規チャット
-          </button>
+          <div className="flex-shrink-0 p-4 border-b border-gray-200">
+            <button
+              onClick={() => {
+                handleNewSession();
+                setSidebarOpen(false);
+              }}
+              className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm shadow-sm hover:shadow-md"
+            >
+              + 新規チャット
+            </button>
+          </div>
 
           {/* Session List */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto min-h-0">
             {isLoadingSessions ? (
               <div className="p-4 text-center text-gray-500">
                 読み込み中...
@@ -365,11 +379,11 @@ export default function ChatPage() {
                     }`}
                   >
                     <div className="flex justify-between items-start">
-                      <div className="flex-1 truncate">
+                      <div className="flex-1 truncate min-w-0">
                         <p className="font-medium text-sm text-gray-900 truncate">
                           {session.title}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 mt-0.5">
                           {session.messageCount}件のメッセージ
                         </p>
                       </div>
@@ -378,13 +392,15 @@ export default function ChatPage() {
                           e.stopPropagation();
                           handleDeleteSession(session.sessionId);
                         }}
-                        className="opacity-0 group-hover:opacity-100 ml-2 text-gray-400 hover:text-red-600"
+                        className="opacity-0 group-hover:opacity-100 ml-2 text-gray-400 hover:text-red-600 flex-shrink-0 transition-opacity"
                         title="削除"
                       >
-                        ✕
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                       </button>
                     </div>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-gray-400 mt-1.5">
                       残り {session.daysUntilDeletion} 日
                     </p>
                   </div>
@@ -393,40 +409,62 @@ export default function ChatPage() {
             )}
           </div>
 
-          {/* Filters Section */}
-          <div className="border-t border-gray-200 p-4 bg-gray-50">
-            <h3 className="text-xs font-semibold text-gray-700 mb-3">フィルター</h3>
-            <div className="space-y-2">
-              <input
-                type="text"
-                placeholder="資料タイプ"
-                value={selectedFilters.documentType}
-                onChange={(e) => setSelectedFilters({
-                  ...selectedFilters,
-                  documentType: e.target.value
-                })}
-                className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
-              />
-              <input
-                type="text"
-                placeholder="製品"
-                value={selectedFilters.product}
-                onChange={(e) => setSelectedFilters({
-                  ...selectedFilters,
-                  product: e.target.value
-                })}
-                className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
-              />
-              <input
-                type="text"
-                placeholder="モデル"
-                value={selectedFilters.model}
-                onChange={(e) => setSelectedFilters({
-                  ...selectedFilters,
-                  model: e.target.value
-                })}
-                className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
-              />
+          {/* Filters Section - Fixed at bottom */}
+          <div className="border-t border-gray-200 p-4 bg-gray-50 flex-shrink-0">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-1.5">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              フィルター
+            </h3>
+            <div className="space-y-2.5">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">資料タイプ</label>
+                <input
+                  type="text"
+                  placeholder="例: マニュアル"
+                  value={selectedFilters.documentType}
+                  onChange={(e) => setSelectedFilters({
+                    ...selectedFilters,
+                    documentType: e.target.value
+                  })}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-500 placeholder:opacity-100 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">製品</label>
+                <input
+                  type="text"
+                  placeholder="例: 製品名"
+                  value={selectedFilters.product}
+                  onChange={(e) => setSelectedFilters({
+                    ...selectedFilters,
+                    product: e.target.value
+                  })}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-500 placeholder:opacity-100 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">モデル</label>
+                <input
+                  type="text"
+                  placeholder="例: モデル名"
+                  value={selectedFilters.model}
+                  onChange={(e) => setSelectedFilters({
+                    ...selectedFilters,
+                    model: e.target.value
+                  })}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-500 placeholder:opacity-100 transition-all"
+                />
+              </div>
+              {(selectedFilters.documentType || selectedFilters.product || selectedFilters.model) && (
+                <button
+                  onClick={() => setSelectedFilters({ documentType: '', product: '', model: '' })}
+                  className="w-full mt-2 px-3 py-1.5 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  フィルターをクリア
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -434,77 +472,92 @@ export default function ChatPage() {
         {/* Main Chat Area */}
         <div className="flex-1 flex flex-col bg-white">
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 min-h-0">
             {messages.length === 0 ? (
               <div className="flex items-center justify-center h-full">
-                <div className="text-center">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                    🤖 EleKnowledge-AIへようこそ！
+                <div className="text-center max-w-md px-4">
+                  <div className="mb-6">
+                    <div className="w-20 h-20 mx-auto bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
+                      <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
+                    EleKnowledge-AIへようこそ！
                   </h2>
-                  <p className="text-gray-600">
+                  <p className="text-gray-600 text-base sm:text-lg mb-6">
                     技術資料を検索して質問にお答えします
                   </p>
+                  <div className="flex flex-wrap gap-2 justify-center text-sm text-gray-500">
+                    <span className="px-3 py-1.5 bg-gray-100 rounded-full">💡 質問を入力</span>
+                    <span className="px-3 py-1.5 bg-gray-100 rounded-full">📚 資料検索</span>
+                    <span className="px-3 py-1.5 bg-gray-100 rounded-full">🔍 フィルター機能</span>
+                  </div>
                 </div>
               </div>
             ) : (
+              <div className="space-y-5">
               <>
                 {messages.map((message) => (
                   <div
                     key={message.id}
-                    className={`flex ${
+                    className={`flex min-w-0 ${
                       message.role === 'user' ? 'justify-end' : 'justify-start'
-                    } mb-4`}
+                    }`}
                   >
                     <div
-                      className={`max-w-[85%] sm:max-w-2xl px-4 py-3 rounded-2xl shadow-sm ${
+                      className={`min-w-[200px] max-w-[85%] sm:max-w-2xl px-5 py-4 rounded-2xl shadow-sm break-words flex-shrink-0 ${
                         message.role === 'user'
                           ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-br-sm'
                           : 'bg-white border border-gray-200 text-gray-900 rounded-bl-sm'
                       }`}
                     >
                       {/* Role Indicator */}
-                      <div className={`flex items-center gap-2 mb-2 ${
+                      <div className={`flex items-center gap-2 mb-2.5 ${
                         message.role === 'user' ? 'justify-end' : 'justify-start'
                       }`}>
                         {message.role === 'assistant' && (
-                          <div className="flex items-center gap-1">
-                            <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center">
                               <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                               </svg>
                             </div>
-                            <span className="text-xs font-medium text-gray-500">AI</span>
+                            <span className="text-sm font-semibold text-gray-700">AI</span>
                           </div>
                         )}
                         {message.role === 'user' && (
-                          <span className="text-xs font-medium text-blue-100">あなた</span>
+                          <span className="text-sm font-semibold text-white">あなた</span>
                         )}
                       </div>
 
-                      <p className={`whitespace-pre-wrap text-sm leading-relaxed ${
-                        message.role === 'user' ? 'text-white' : 'text-gray-900'
-                      }`}>
-                        {message.content}
-                      </p>
+                      <div className="w-full">
+                        <p className={`whitespace-pre-wrap break-words text-base leading-relaxed font-normal ${
+                          message.role === 'user' ? 'text-white' : 'text-gray-800'
+                        }`}>
+                          {message.content}
+                        </p>
+                      </div>
 
                       {/* Citations */}
                       {message.role === 'assistant' && message.sourceDocuments && message.sourceDocuments.length > 0 && (
                         <div className="mt-4 pt-3 border-t border-gray-200 space-y-2">
-                          <p className="text-xs font-semibold text-gray-600 mb-2">📄 参考資料:</p>
-                          <div className="space-y-1.5">
+                          <p className="text-sm font-semibold text-gray-700 mb-2.5">📄 参考資料:</p>
+                          <div className="space-y-2">
                             {message.sourceDocuments.map((doc, idx) => (
                               <a
                                 key={idx}
                                 href={doc.sourceUri}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-2 text-xs text-blue-600 hover:text-blue-700 hover:underline transition-colors"
+                                className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 hover:underline transition-colors"
                               >
-                                <svg className="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                                 <span className="truncate">{doc.documentName}</span>
-                                <span className="text-gray-400 text-[10px]">({(doc.relevance * 100).toFixed(0)}%)</span>
+                                <span className="text-gray-500 text-xs">({(doc.relevance * 100).toFixed(0)}%)</span>
                               </a>
                             ))}
                           </div>
@@ -513,10 +566,10 @@ export default function ChatPage() {
 
                       {/* Feedback Buttons */}
                       {message.role === 'assistant' && (
-                        <div className="mt-3 pt-3 border-t border-gray-200 flex gap-2">
+                        <div className="mt-4 pt-3 border-t border-gray-200 flex gap-2.5">
                           <button
                             onClick={() => handleFeedback(message.id, 'good')}
-                            className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-all ${
+                            className={`flex items-center gap-1.5 text-sm px-4 py-2 rounded-lg transition-all font-medium ${
                               message.feedback === 'good'
                                 ? 'bg-green-500 text-white shadow-md'
                                 : 'bg-gray-100 text-gray-700 hover:bg-green-50 hover:text-green-700'
@@ -529,7 +582,7 @@ export default function ChatPage() {
                           </button>
                           <button
                             onClick={() => handleFeedback(message.id, 'bad')}
-                            className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-all ${
+                            className={`flex items-center gap-1.5 text-sm px-4 py-2 rounded-lg transition-all font-medium ${
                               message.feedback === 'bad'
                                 ? 'bg-red-500 text-white shadow-md'
                                 : 'bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-700'
@@ -543,8 +596,8 @@ export default function ChatPage() {
                         </div>
                       )}
 
-                      <p className={`text-xs mt-2 ${
-                        message.role === 'user' ? 'text-blue-100' : 'text-gray-400'
+                      <p className={`text-xs mt-3 opacity-80 ${
+                        message.role === 'user' ? 'text-white' : 'text-gray-500'
                       }`}>
                         {new Date(message.timestamp).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
                       </p>
@@ -553,76 +606,123 @@ export default function ChatPage() {
                 ))}
                 {/* Typing Indicator */}
                 {loading && (
-                  <div className="flex justify-start mb-4">
-                    <div className="max-w-[85%] sm:max-w-2xl px-4 py-3 rounded-2xl rounded-bl-sm bg-white border border-gray-200 shadow-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+                  <div className="flex justify-start">
+                    <div className="min-w-[200px] max-w-[85%] sm:max-w-2xl px-5 py-4 rounded-2xl rounded-bl-sm bg-white border border-gray-200 shadow-sm flex-shrink-0">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center">
                           <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                           </svg>
                         </div>
-                        <div className="flex gap-1">
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                        <div className="flex gap-1.5">
+                          <div className="w-2.5 h-2.5 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                          <div className="w-2.5 h-2.5 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                          <div className="w-2.5 h-2.5 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                         </div>
                       </div>
                     </div>
                   </div>
                 )}
                 <div ref={messagesEndRef} />
-              </>
+              </div>
             )}
           </div>
 
           {/* Error Message */}
           {error && (
-            <div className="px-6 py-3 bg-red-50 border-t border-red-200">
-              <p className="text-sm text-red-800">{error}</p>
+            <div className="border-t border-red-200 bg-red-50 px-4 sm:px-6 py-3 flex-shrink-0">
+              <div className="flex items-start gap-2">
+                <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm text-red-800 flex-1">{error}</p>
+                <button
+                  onClick={() => setError('')}
+                  className="text-red-600 hover:text-red-800 flex-shrink-0"
+                  aria-label="エラーを閉じる"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
           )}
 
           {/* Input Area */}
-          <div className="border-t border-gray-200 p-4 sm:p-6 bg-white">
-            <div className="flex gap-2 sm:gap-3">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
-                }}
-                placeholder="質問を入力してください... (Enterで送信)"
-                disabled={loading}
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 text-sm sm:text-base transition-all"
-              />
-              <button
-                onClick={handleSendMessage}
-                disabled={loading || !input.trim()}
-                className="px-4 sm:px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg font-medium text-sm sm:text-base"
-              >
-                {loading ? (
-                  <span className="flex items-center gap-2">
-                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span className="hidden sm:inline">送信中...</span>
-                    <span className="sm:hidden">送信中</span>
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                    </svg>
-                    <span className="hidden sm:inline">送信</span>
-                    <span className="sm:hidden">送信</span>
-                  </span>
-                )}
-              </button>
+          <div className="border-t border-gray-200 bg-white flex-shrink-0">
+            <div className="p-4 sm:p-6">
+              <div className="flex gap-2 sm:gap-3 items-end">
+                <div className="flex-1 relative">
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                    placeholder="質問を入力してください... (Enterで送信)"
+                    disabled={loading}
+                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 text-sm sm:text-base transition-all placeholder:text-gray-500 placeholder:opacity-100 shadow-sm"
+                  />
+                  {input.trim() && (
+                    <button
+                      onClick={() => setInput('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                      aria-label="入力をクリア"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+                <button
+                  onClick={handleSendMessage}
+                  disabled={loading || !input.trim()}
+                  className="px-4 sm:px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg font-medium text-sm sm:text-base flex items-center gap-2 flex-shrink-0"
+                >
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span className="hidden sm:inline">送信中</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                      </svg>
+                      <span className="hidden sm:inline">送信</span>
+                    </>
+                  )}
+                </button>
+              </div>
+              {(selectedFilters.documentType || selectedFilters.product || selectedFilters.model) && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span className="text-xs text-gray-500">適用中のフィルター:</span>
+                  {selectedFilters.documentType && (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">
+                      資料タイプ: {selectedFilters.documentType}
+                    </span>
+                  )}
+                  {selectedFilters.product && (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">
+                      製品: {selectedFilters.product}
+                    </span>
+                  )}
+                  {selectedFilters.model && (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">
+                      モデル: {selectedFilters.model}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
