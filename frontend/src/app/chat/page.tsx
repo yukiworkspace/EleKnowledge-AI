@@ -49,6 +49,7 @@ export default function ChatPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState({
     documentType: '',
@@ -534,66 +535,80 @@ export default function ChatPage() {
             )}
           </div>
 
-          {/* Filters Section - Fixed at bottom */}
-          <div className="border-t border-gray-200 p-4 bg-gradient-to-b from-gray-50 to-white flex-shrink-0 shadow-inner">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-1.5">
-              <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+          {/* Filters Section - Fixed at bottom with accordion */}
+          <div className="border-t border-gray-200 p-3 bg-gradient-to-b from-gray-50 to-white flex-shrink-0 shadow-inner">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="w-full flex items-center justify-between text-sm font-semibold text-gray-700"
+              aria-expanded={showFilters}
+            >
+              <span className="flex items-center gap-1.5">
+                <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                フィルター
+              </span>
+              <svg className={`w-4 h-4 text-gray-500 transition-transform ${showFilters ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
-              フィルター
-            </h3>
-            <div className="space-y-2.5">
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">資料タイプ</label>
-                <input
-                  type="text"
-                  placeholder="例: マニュアル"
-                  value={selectedFilters.documentType}
-                  onChange={(e) => setSelectedFilters({
-                    ...selectedFilters,
-                    documentType: e.target.value
-                  })}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-500 placeholder:opacity-100 transition-all bg-white hover:border-gray-400 text-gray-900"
-                />
+            </button>
+
+            {showFilters && (
+              <div className="mt-3 space-y-2">
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">資料タイプ</label>
+                  <input
+                    type="text"
+                    placeholder="例: マニュアル"
+                    value={selectedFilters.documentType}
+                    onChange={(e) => setSelectedFilters({
+                      ...selectedFilters,
+                      documentType: e.target.value
+                    })}
+                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-500 placeholder:opacity-100 transition-all bg-white hover:border-gray-400 text-gray-900"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <div className="w-1/2">
+                    <label className="block text-xs text-gray-600 mb-1">製品</label>
+                    <input
+                      type="text"
+                      placeholder="例: 製品名"
+                      value={selectedFilters.product}
+                      onChange={(e) => setSelectedFilters({
+                        ...selectedFilters,
+                        product: e.target.value
+                      })}
+                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-500 placeholder:opacity-100 transition-all bg-white hover:border-gray-400 text-gray-900"
+                    />
+                  </div>
+                  <div className="w-1/2">
+                    <label className="block text-xs text-gray-600 mb-1">モデル</label>
+                    <input
+                      type="text"
+                      placeholder="例: モデル名"
+                      value={selectedFilters.model}
+                      onChange={(e) => setSelectedFilters({
+                        ...selectedFilters,
+                        model: e.target.value
+                      })}
+                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-500 placeholder:opacity-100 transition-all bg-white hover:border-gray-400 text-gray-900"
+                    />
+                  </div>
+                </div>
+                {(selectedFilters.documentType || selectedFilters.product || selectedFilters.model) && (
+                  <button
+                    onClick={() => setSelectedFilters({ documentType: '', product: '', model: '' })}
+                    className="w-full mt-1 px-3 py-1.5 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-100 transition-all hover:shadow-sm flex items-center justify-center gap-1"
+                  >
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    フィルターをクリア
+                  </button>
+                )}
               </div>
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">製品</label>
-                <input
-                  type="text"
-                  placeholder="例: 製品名"
-                  value={selectedFilters.product}
-                  onChange={(e) => setSelectedFilters({
-                    ...selectedFilters,
-                    product: e.target.value
-                  })}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-500 placeholder:opacity-100 transition-all bg-white hover:border-gray-400 text-gray-900"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">モデル</label>
-                <input
-                  type="text"
-                  placeholder="例: モデル名"
-                  value={selectedFilters.model}
-                  onChange={(e) => setSelectedFilters({
-                    ...selectedFilters,
-                    model: e.target.value
-                  })}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-500 placeholder:opacity-100 transition-all bg-white hover:border-gray-400 text-gray-900"
-                />
-              </div>
-              {(selectedFilters.documentType || selectedFilters.product || selectedFilters.model) && (
-                <button
-                  onClick={() => setSelectedFilters({ documentType: '', product: '', model: '' })}
-                  className="w-full mt-2 px-3 py-1.5 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-100 transition-all hover:shadow-sm flex items-center justify-center gap-1"
-                >
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                  フィルターをクリア
-                </button>
-              )}
-            </div>
+            )}
           </div>
         </div>
 
@@ -602,8 +617,8 @@ export default function ChatPage() {
           {/* Messages Area */}
           <div 
             ref={messagesContainerRef}
-            className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 min-h-0 max-h-full scroll-smooth"
-            style={{ maxHeight: 'calc(100vh - 200px)' }}
+            className="flex-1 overflow-y-auto p-3 sm:p-5 lg:p-6 min-h-0 max-h-full scroll-smooth"
+            style={{ maxHeight: 'calc(100vh - 190px)' }}
           >
             {messages.length === 0 ? (
               <div className="flex items-center justify-center h-full w-full min-w-0" style={{ flexDirection: 'row', writingMode: 'horizontal-tb' }}>
@@ -629,7 +644,7 @@ export default function ChatPage() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-4 max-w-5xl mx-auto w-full px-2 sm:px-4">
+              <div className="space-y-3 max-w-4xl mx-auto w-full px-2 sm:px-3">
               <>
                 {messages.map((message, index) => (
                   <div
@@ -640,12 +655,12 @@ export default function ChatPage() {
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
                     <div
-                      className={`px-5 py-4 rounded-2xl shadow-md break-words flex-shrink-0 transition-all duration-200 hover:shadow-lg ${
+                      className={`px-4 py-3 rounded-2xl shadow-md break-words flex-shrink-0 transition-all duration-200 hover:shadow-lg ${
                         message.role === 'user'
-                          ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-br-sm max-w-[72%] sm:max-w-[70%] lg:max-w-[65%]'
-                          : 'bg-white border border-gray-200 text-gray-900 rounded-bl-sm hover:border-gray-300 max-w-full sm:max-w-[92%] lg:max-w-[98%]'
+                          ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-br-sm max-w-[68%] sm:max-w-[65%] lg:max-w-[60%]'
+                          : 'bg-white border border-gray-200 text-gray-900 rounded-bl-sm hover:border-gray-300 max-w-full sm:max-w-[88%] lg:max-w-[95%]'
                       }`}
-                      style={{ minWidth: '200px' }}
+                      style={{ minWidth: '180px' }}
                     >
                       {/* Role Indicator */}
                       <div className={`flex items-center gap-2 mb-2.5 ${
@@ -668,7 +683,7 @@ export default function ChatPage() {
 
                       <div className="w-full">
                         {message.role === 'assistant' ? (
-                          <div className="chat-markdown text-gray-800">
+                          <div className="chat-markdown text-gray-800 text-sm sm:text-[15px]">
                             {streamingMessageId === message.id ? (
                               <>
                                 <ReactMarkdown components={markdownComponents}>
@@ -683,7 +698,7 @@ export default function ChatPage() {
                             )}
                           </div>
                         ) : (
-                          <p className={`whitespace-pre-wrap break-words text-base leading-relaxed font-normal text-white`}>
+                          <p className={`whitespace-pre-wrap break-words text-sm leading-relaxed font-normal text-white`}>
                             {message.content}
                           </p>
                         )}
@@ -825,8 +840,9 @@ export default function ChatPage() {
           )}
 
           {/* Input Area - Fixed at bottom */}
+          {/* Input Area - Fixed at bottom */}
           <div className="border-t border-gray-200 bg-white/95 backdrop-blur-sm sticky bottom-0 z-10 flex-shrink-0 shadow-lg">
-            <div className="p-4 sm:p-6">
+            <div className="p-3 sm:p-4">
               <div className="flex gap-2 sm:gap-3 items-end">
                 <div className="flex-1 relative">
                   <input
@@ -841,15 +857,15 @@ export default function ChatPage() {
                     }}
                     placeholder="質問を入力してください... (Enterで送信)"
                     disabled={loading}
-                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 text-sm sm:text-base transition-all placeholder:text-gray-500 placeholder:opacity-100 shadow-sm hover:border-gray-400 bg-white text-gray-900"
+                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 text-sm transition-all placeholder:text-gray-500 placeholder:opacity-100 shadow-sm hover:border-gray-400 bg-white text-gray-900"
                   />
                   {input.trim() && (
                     <button
                       onClick={() => setInput('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                       aria-label="入力をクリア"
                     >
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
@@ -858,7 +874,7 @@ export default function ChatPage() {
                 <button
                   onClick={handleSendMessage}
                   disabled={loading || !input.trim()}
-                  className="px-4 sm:px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg font-medium text-sm sm:text-base flex items-center gap-2 flex-shrink-0 transform hover:scale-105 active:scale-95 disabled:transform-none"
+                  className="px-3 sm:px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg font-medium text-sm flex items-center gap-2 flex-shrink-0 transform hover:scale-105 active:scale-95 disabled:transform-none"
                 >
                   {loading ? (
                     <>
@@ -879,10 +895,10 @@ export default function ChatPage() {
                 </button>
               </div>
               {(selectedFilters.documentType || selectedFilters.product || selectedFilters.model) && (
-                <div className="mt-3 flex flex-wrap gap-2 items-center animate-fade-in">
+                <div className="mt-2 flex flex-wrap gap-2 items-center animate-fade-in">
                   <span className="text-xs text-gray-500 font-medium">適用中のフィルター:</span>
                   {selectedFilters.documentType && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-gradient-to-r from-blue-100 to-blue-50 text-blue-700 rounded-full border border-blue-200 shadow-sm">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-gradient-to-r from-blue-100 to-blue-50 text-blue-700 rounded-full border border-blue-200 shadow-sm">
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
@@ -890,7 +906,7 @@ export default function ChatPage() {
                     </span>
                   )}
                   {selectedFilters.product && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-gradient-to-r from-blue-100 to-blue-50 text-blue-700 rounded-full border border-blue-200 shadow-sm">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-gradient-to-r from-blue-100 to-blue-50 text-blue-700 rounded-full border border-blue-200 shadow-sm">
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                       </svg>
@@ -898,7 +914,7 @@ export default function ChatPage() {
                     </span>
                   )}
                   {selectedFilters.model && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-gradient-to-r from-blue-100 to-blue-50 text-blue-700 rounded-full border border-blue-200 shadow-sm">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-gradient-to-r from-blue-100 to-blue-50 text-blue-700 rounded-full border border-blue-200 shadow-sm">
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
                       </svg>
