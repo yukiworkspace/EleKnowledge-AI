@@ -254,11 +254,15 @@ export default function ChatPage() {
         }
       });
       const fetchedMessages = response.data.messages || [];
-      setMessages(fetchedMessages);
+      const normalizedMessages = fetchedMessages.map((msg: any, idx: number) => ({
+        ...msg,
+        id: msg.id || msg.messageId || `msg-${sessionId}-${idx}-${Date.now()}`
+      }));
+      setMessages(normalizedMessages);
       
       // 既存のメッセージはタイプライター効果なしで表示
       const completedMessages: Record<string, string> = {};
-      fetchedMessages.forEach((msg: Message) => {
+      normalizedMessages.forEach((msg: Message) => {
         if (msg.role === 'assistant') {
           completedMessages[msg.id] = msg.content;
         }
@@ -315,8 +319,9 @@ export default function ChatPage() {
       });
       console.log('RAG query response:', response.data);
 
+      const aiId = response.data.aiMessageId || response.data.messageId || `msg-ai-${Date.now()}`;
       const aiMessage: Message = {
-        id: response.data.aiMessageId,
+        id: aiId,
         role: 'assistant',
         content: response.data.content,
         timestamp: response.data.timestamp,
@@ -327,10 +332,10 @@ export default function ChatPage() {
       setMessages(prev => [...prev, aiMessage]);
       
       // タイプライター効果を開始
-      setStreamingMessageId(response.data.aiMessageId);
+      setStreamingMessageId(aiId);
       setStreamingMessages(prev => ({
         ...prev,
-        [response.data.aiMessageId]: ''
+        [aiId]: ''
       }));
 
       // 新規セッションの場合はセッション一覧を更新
