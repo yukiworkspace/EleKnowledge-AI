@@ -178,7 +178,7 @@ export default function LoginPage() {
                     if (passwordError) validatePassword(e.target.value);
                   }}
                   onBlur={(e) => validatePassword(e.target.value)}
-                  className={`w-full px-4 py-2 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors text-base placeholder:text-gray-500 placeholder:opacity-100 ${
+                  className={`w-full px-4 py-2 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors text-base placeholder:text-gray-500 placeholder:opacity-100 text-gray-900 ${
                     passwordError
                       ? 'border-red-300 focus:ring-red-500'
                       : 'border-gray-300 focus:ring-blue-500'

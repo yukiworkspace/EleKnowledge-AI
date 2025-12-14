@@ -395,7 +395,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
+    <div className="h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col overflow-hidden">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4 flex justify-between items-center flex-shrink-0 shadow-sm backdrop-blur-sm bg-white/95">
         <div className="flex items-center gap-3">
@@ -433,7 +433,7 @@ export default function ChatPage() {
         </Link>
       </div>
 
-      <div className="flex flex-1 overflow-hidden relative">
+      <div className="flex flex-1 overflow-hidden relative h-full">
         {/* Mobile Sidebar Overlay */}
         {sidebarOpen && (
           <div
@@ -443,7 +443,7 @@ export default function ChatPage() {
         )}
 
         {/* Sidebar - Session List */}
-        <div className={`fixed md:static inset-y-0 left-0 z-50 md:z-auto w-64 bg-white border-r border-gray-200 flex flex-col h-full transform transition-transform duration-300 ease-in-out ${
+        <div className={`fixed md:static inset-y-0 left-0 z-50 md:z-auto w-64 bg-white border-r border-gray-200 flex flex-col h-full max-h-full transform transition-transform duration-300 ease-in-out ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}>
           {/* Mobile Sidebar Header */}
@@ -477,7 +477,7 @@ export default function ChatPage() {
           </div>
 
           {/* Session List */}
-          <div className="flex-1 overflow-y-auto min-h-0 scroll-smooth">
+          <div className="flex-1 overflow-y-auto min-h-0 max-h-full scroll-smooth" style={{ maxHeight: 'calc(100vh - 300px)' }}>
             {isLoadingSessions ? (
               <div className="p-4 text-center text-gray-500">
                 読み込み中...
@@ -598,11 +598,12 @@ export default function ChatPage() {
         </div>
 
         {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col bg-white relative">
+        <div className="flex-1 flex flex-col bg-white relative min-h-0 overflow-hidden">
           {/* Messages Area */}
           <div 
             ref={messagesContainerRef}
-            className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 min-h-0 scroll-smooth"
+            className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 min-h-0 max-h-full scroll-smooth"
+            style={{ maxHeight: 'calc(100vh - 200px)' }}
           >
             {messages.length === 0 ? (
               <div className="flex items-center justify-center h-full w-full min-w-0" style={{ flexDirection: 'row', writingMode: 'horizontal-tb' }}>
