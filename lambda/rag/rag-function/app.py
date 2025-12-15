@@ -91,11 +91,20 @@ def query_knowledge_base(query: str, filters: dict = None) -> dict:
         # Add metadata filters if provided
         if filters:
             filter_list = []
+            # フロントエンドのキー名 → Knowledge Baseのメタデータキー名のマッピング
+            key_mapping = {
+                'documentType': 'document',  # documentType → document に変換
+                'product': 'product',        # そのまま
+                'model': 'model'             # そのまま
+            }
+            
             for key, value in filters.items():
                 if value:
+                    # 実際のメタデータキー名に変換
+                    metadata_key = key_mapping.get(key, key)
                     filter_list.append({
                         'equals': {
-                            'key': key,
+                            'key': metadata_key,
                             'value': value
                         }
                     })
@@ -234,7 +243,7 @@ def extract_citations(kb_results: dict) -> tuple:
                 'documentName': doc_name,
                 'title': metadata.get('title'),  # メタデータからtitleを取得
                 'sourceUri': signed_url,
-                'documentType': metadata.get('document-type', 'unknown'),
+                'documentType': metadata.get('document', 'unknown'),  # document-type → document に修正
                 'product': metadata.get('product', ''),
                 'model': metadata.get('model', ''),
                 'relevance': Decimal(str(result.get('score', 0.0)))
