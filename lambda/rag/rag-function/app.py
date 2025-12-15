@@ -91,22 +91,15 @@ def query_knowledge_base(query: str, filters: dict = None) -> dict:
         # Add metadata filters if provided
         if filters:
             filter_list = []
-            key_mapping = {
-                'documentType': 'document',
-                'product': 'product',
-                'model': 'model'
-            }
-
             for key, value in filters.items():
                 if value:
-                    metadata_key = key_mapping.get(key, key)
                     filter_list.append({
                         'equals': {
-                            'key': metadata_key,
+                            'key': key,
                             'value': value
                         }
                     })
-
+            
             if filter_list:
                 retrieval_config['vectorSearchConfiguration']['filter'] = {
                     'andAll': filter_list
@@ -239,6 +232,7 @@ def extract_citations(kb_results: dict) -> tuple:
             
             source_doc = {
                 'documentName': doc_name,
+                'title': metadata.get('title'),  # メタデータからtitleを取得
                 'sourceUri': signed_url,
                 'documentType': metadata.get('document-type', 'unknown'),
                 'product': metadata.get('product', ''),
