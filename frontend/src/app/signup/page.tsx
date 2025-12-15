@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { PasswordStrength } from '@/components/ui/PasswordStrength';
+import { Card } from '@/components/ui/Card';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -125,18 +126,30 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="w-full max-w-[28rem] space-y-8 flex-shrink-0">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <h1 className="text-2xl font-bold text-gray-900">
             EleKnowledge-AI
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            アカウント作成
-          </p>
+          </h1>
         </div>
-        
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex items-center justify-center min-h-[calc(100vh-80px)] py-12 px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-[28rem] space-y-8">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              アカウント作成
+            </h2>
+            <p className="text-gray-600">
+              新しいアカウントを作成してください
+            </p>
+          </div>
+          
+          <Card variant="elevated" padding="lg">
+            <form className="space-y-6" onSubmit={handleSubmit}>
           {error && (
             <ErrorMessage 
               message={error} 
@@ -192,16 +205,17 @@ export default function SignupPage() {
                     if (passwordError) validatePassword(e.target.value);
                   }}
                   onBlur={(e) => validatePassword(e.target.value)}
-                  className={`w-full px-4 py-2 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors text-base ${
+                  className={`w-full px-4 py-2 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors text-base placeholder:text-gray-500 placeholder:opacity-100 text-gray-900 ${
                     passwordError
                       ? 'border-red-300 focus:ring-red-500'
                       : 'border-gray-300 focus:ring-blue-500'
                   }`}
+                  aria-invalid={passwordError ? 'true' : 'false'}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors p-1 rounded-md hover:bg-gray-100"
                   aria-label={showPassword ? 'パスワードを非表示' : 'パスワードを表示'}
                 >
                   {showPassword ? (
@@ -217,7 +231,10 @@ export default function SignupPage() {
                 </button>
               </div>
               {passwordError && (
-                <p className="mt-1 text-sm text-red-600" role="alert">
+                <p className="mt-1 text-sm text-red-600 flex items-center gap-1" role="alert">
+                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
                   {passwordError}
                 </p>
               )}
@@ -237,16 +254,18 @@ export default function SignupPage() {
             </Button>
           </div>
 
-          <div className="text-sm text-center">
+          <div className="flex justify-center items-center text-sm pt-4 border-t border-gray-200">
             <Link
               href="/login"
-              className="font-medium text-blue-600 hover:text-blue-500"
+              className="font-medium text-blue-600 hover:text-blue-700 transition-colors duration-200"
             >
               既にアカウントをお持ちの方
             </Link>
           </div>
-        </form>
-      </div>
+            </form>
+          </Card>
+        </div>
+      </main>
     </div>
   );
 }
