@@ -58,6 +58,38 @@ export default function ChatPage() {
     model: ''
   });
 
+  const documentTypeOptions = [
+    '',
+    'C資料',
+    'D資料',
+    'S資料',
+    'EAマニュアル',
+    '業務マニュアル',
+    '据付ノート',
+    '据付基準',
+    'イエローブック'
+  ];
+
+  const productOptions = [
+    '',
+    'エレベーター'
+  ];
+
+  const modelOptions = [
+    '',
+    'KE-LG',
+    'KM-LD',
+    'CM-MA',
+    'CM-LB',
+    'ME-CM',
+    'ME-CH',
+    'KE-PF',
+    'KE-RF',
+    'KE-SA',
+    'KE-HF',
+    'KM-SA'
+  ];
+
   const API_URL = process.env.NEXT_PUBLIC_RAG_API_URL || '';
   const CHAT_API_URL = process.env.NEXT_PUBLIC_CHAT_API_URL || '';
 
@@ -580,43 +612,55 @@ export default function ChatPage() {
               <div className="px-2.5 pb-2.5 space-y-2">
                 <div>
                   <label className="block text-xs text-gray-600 mb-1">資料タイプ</label>
-                  <input
-                    type="text"
-                    placeholder="例: マニュアル"
+                  <select
                     value={selectedFilters.documentType}
                     onChange={(e) => setSelectedFilters({
                       ...selectedFilters,
                       documentType: e.target.value
                     })}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-500 placeholder:opacity-100 transition-all bg-white hover:border-gray-400 text-gray-900"
-                  />
+                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white hover:border-gray-400 text-gray-900"
+                  >
+                    {documentTypeOptions.map((opt) => (
+                      <option key={opt || 'all'} value={opt}>
+                        {opt || '指定しない'}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="flex gap-2">
                   <div className="w-1/2">
                     <label className="block text-xs text-gray-600 mb-1">製品</label>
-                    <input
-                      type="text"
-                      placeholder="例: 製品名"
+                    <select
                       value={selectedFilters.product}
                       onChange={(e) => setSelectedFilters({
                         ...selectedFilters,
                         product: e.target.value
                       })}
-                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-500 placeholder:opacity-100 transition-all bg-white hover:border-gray-400 text-gray-900"
-                    />
+                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white hover:border-gray-400 text-gray-900"
+                    >
+                      {productOptions.map((opt) => (
+                        <option key={opt || 'all'} value={opt}>
+                          {opt || '指定しない'}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div className="w-1/2">
                     <label className="block text-xs text-gray-600 mb-1">モデル</label>
-                    <input
-                      type="text"
-                      placeholder="例: モデル名"
+                    <select
                       value={selectedFilters.model}
                       onChange={(e) => setSelectedFilters({
                         ...selectedFilters,
                         model: e.target.value
                       })}
-                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-500 placeholder:opacity-100 transition-all bg-white hover:border-gray-400 text-gray-900"
-                    />
+                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white hover:border-gray-400 text-gray-900"
+                    >
+                      {modelOptions.map((opt) => (
+                        <option key={opt || 'all'} value={opt}>
+                          {opt || '指定しない'}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
                 {(selectedFilters.documentType || selectedFilters.product || selectedFilters.model) && (
