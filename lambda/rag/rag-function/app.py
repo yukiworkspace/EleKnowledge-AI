@@ -91,15 +91,22 @@ def query_knowledge_base(query: str, filters: dict = None) -> dict:
         # Add metadata filters if provided
         if filters:
             filter_list = []
+            key_mapping = {
+                'documentType': 'document',
+                'product': 'product',
+                'model': 'model'
+            }
+
             for key, value in filters.items():
                 if value:
+                    metadata_key = key_mapping.get(key, key)
                     filter_list.append({
                         'equals': {
-                            'key': key,
+                            'key': metadata_key,
                             'value': value
                         }
                     })
-            
+
             if filter_list:
                 retrieval_config['vectorSearchConfiguration']['filter'] = {
                     'andAll': filter_list
