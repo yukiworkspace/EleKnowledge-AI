@@ -331,26 +331,26 @@ export default function HomePage() {
         >
           <div className="absolute inset-0 bg-black/40" />
           <div
-            className="relative w-full max-w-lg mx-auto rounded-xl bg-white shadow-xl border border-gray-200 p-6"
+            className="relative w-full max-w-2xl mx-auto rounded-xl bg-white shadow-xl border border-gray-200 p-6"
             onClick={(e) => e.stopPropagation()}
             style={{ minWidth: '320px' }}
           >
             {/* Header */}
-            <div className="flex items-start justify-between gap-4 mb-4">
-              <div className="flex-1 min-w-0 pr-2">
-                <h3 className="text-xl font-bold text-gray-900 mb-2 break-words">{infoModal.title}</h3>
-                <p className="text-sm text-gray-700 leading-relaxed break-words">{infoModal.description}</p>
+            <div className="mb-4">
+              <div className="flex items-start justify-between gap-4 mb-2">
+                <h3 className="text-xl font-bold text-gray-900 whitespace-nowrap flex-1">{infoModal.title}</h3>
+                <button
+                  type="button"
+                  className="flex-shrink-0 p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+                  onClick={() => setInfoModal(null)}
+                  aria-label="閉じる"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-              <button
-                type="button"
-                className="flex-shrink-0 p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
-                onClick={() => setInfoModal(null)}
-                aria-label="閉じる"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              <p className="text-sm text-gray-700 leading-relaxed break-words">{infoModal.description}</p>
             </div>
 
             {/* Bullets */}
