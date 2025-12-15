@@ -29,6 +29,14 @@ export const amplifyConfig = {
   }
 };
 
-export function configureAmplify() {
+// モジュール読み込み時に自動的に設定（クライアント側のみ）
+if (typeof window !== 'undefined') {
   Amplify.configure(amplifyConfig, { ssr: true });
+}
+
+export function configureAmplify() {
+  // 既に設定されている場合は再設定しない（クライアント側のみ）
+  if (typeof window !== 'undefined') {
+    Amplify.configure(amplifyConfig, { ssr: true });
+  }
 }

@@ -2,8 +2,8 @@
 
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { useEffect } from "react";
-import { configureAmplify } from "@/lib/amplify-config";
+// Amplify設定をインポートするだけで自動的に設定される
+import "@/lib/amplify-config";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,11 +20,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  useEffect(() => {
-    // Configure Amplify on client side
-    configureAmplify();
-  }, []);
-
   return (
     <html lang="ja">
       <head>
