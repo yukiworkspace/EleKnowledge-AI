@@ -148,8 +148,13 @@ export default function ChatPage() {
     const initializeChat = async () => {
       // 開発モード: 認証をスキップする場合
       const skipAuth = process.env.NEXT_PUBLIC_SKIP_AUTH === 'true';
-      
-      if (skipAuth) {
+      const canBypassAuth = skipAuth && process.env.NODE_ENV !== 'production';
+
+      if (skipAuth && !canBypassAuth) {
+        console.warn('[ChatPage] NEXT_PUBLIC_SKIP_AUTH is enabled, but bypass is disabled in production.');
+      }
+
+      if (canBypassAuth) {
         // モックユーザーIDを設定
         const mockUserId = 'dev-user-123';
         setUserId(mockUserId);
