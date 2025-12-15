@@ -110,9 +110,13 @@ def query_knowledge_base(query: str, filters: dict = None) -> dict:
                     })
             
             if filter_list:
-                retrieval_config['vectorSearchConfiguration']['filter'] = {
-                    'andAll': filter_list
-                }
+                # Bedrock APIはandAllに最低2つの要素が必要なため、1つの場合は直接equalsを使用
+                if len(filter_list) == 1:
+                    retrieval_config['vectorSearchConfiguration']['filter'] = filter_list[0]
+                else:
+                    retrieval_config['vectorSearchConfiguration']['filter'] = {
+                        'andAll': filter_list
+                    }
         
         response = bedrock_agent.retrieve(
             knowledgeBaseId=KNOWLEDGE_BASE_ID,
