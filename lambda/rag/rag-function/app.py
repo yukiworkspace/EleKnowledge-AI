@@ -232,7 +232,7 @@ def extract_citations(kb_results: dict) -> tuple:
                     signed_url = s3_client.generate_presigned_url(
                         'get_object',
                         Params={'Bucket': DOCUMENTS_BUCKET, 'Key': key},
-                        ExpiresIn=3600
+                        ExpiresIn=2592000  # 30日間（秒）
                     )
             except Exception as e:
                 print(f"Error generating signed URL: {e}")
