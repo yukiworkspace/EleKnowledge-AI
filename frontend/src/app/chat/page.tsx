@@ -53,6 +53,7 @@ export default function ChatPage() {
   const [showFilters, setShowFilters] = useState(true);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [showAllCitations, setShowAllCitations] = useState<Record<string, boolean>>({});
+  const [mode, setMode] = useState<'normal' | 'spec'>('normal');
   const [selectedFilters, setSelectedFilters] = useState({
     documentType: '',
     product: '',
@@ -333,15 +334,21 @@ export default function ChatPage() {
 
     try {
       const token = await getAuthToken();
+      // 仕様確認モード(spec)ではD資料に固定
+      const effectiveFilters = mode === 'spec'
+        ? { documentType: 'D資料', product: selectedFilters.product || undefined, model: selectedFilters.model || undefined }
+        : {
+            documentType: selectedFilters.documentType || undefined,
+            product: selectedFilters.product || undefined,
+            model: selectedFilters.model || undefined
+          };
+
       const payload = {
         sessionId: currentSession,
         userId: userId,
         query: input,
-        filters: {
-          documentType: selectedFilters.documentType || undefined,
-          product: selectedFilters.product || undefined,
-          model: selectedFilters.model || undefined
-        }
+        mode,
+        filters: effectiveFilters
       };
       
       console.log('Sending RAG query:', {
@@ -617,14 +624,35 @@ export default function ChatPage() {
             {showFilters && (
               <div className="px-2.5 pb-2.5 space-y-2">
                 <div>
+                  <label className="block text-xs text-gray-600 mb-1 flex items-center gap-2">
+                    <span>モード</span>
+                    <span className="text-[10px] text-blue-600 font-semibold bg-blue-50 px-1.5 py-0.5 rounded-full border border-blue-200">
+                      仕様確認モードはD資料のみ検索
+                    </span>
+                  </label>
+                  <select
+                    value={mode}
+                    onChange={(e) => setMode(e.target.value as 'normal' | 'spec')}
+                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white hover:border-gray-400 text-gray-900"
+                  >
+                    <option value="normal">通常モード</option>
+                    <option value="spec">仕様確認モード（D資料のみ）</option>
+                  </select>
+                </div>
+                <div>
                   <label className="block text-xs text-gray-600 mb-1">資料タイプ</label>
                   <select
-                    value={selectedFilters.documentType}
+                    value={mode === 'spec' ? 'D資料' : selectedFilters.documentType}
                     onChange={(e) => setSelectedFilters({
                       ...selectedFilters,
                       documentType: e.target.value
                     })}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white hover:border-gray-400 text-gray-900"
+                    disabled={mode === 'spec'}
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none transition-all bg-white text-gray-900 ${
+                      mode === 'spec'
+                        ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                        : 'border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-400'
+                    }`}
                   >
                     {documentTypeOptions.map((opt) => (
                       <option key={opt || 'all'} value={opt}>
@@ -632,6 +660,9 @@ export default function ChatPage() {
                       </option>
                     ))}
                   </select>
+                  {mode === 'spec' && (
+                    <p className="text-[11px] text-gray-500 mt-1">仕様確認モードでは自動でD資料に固定します。</p>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <div className="w-1/2">
@@ -1013,10 +1044,18 @@ export default function ChatPage() {
                   )}
                 </button>
               </div>
-              {(selectedFilters.documentType || selectedFilters.product || selectedFilters.model) && (
+              {(selectedFilters.documentType || selectedFilters.product || selectedFilters.model || mode === 'spec') && (
                 <div className="mt-2 flex flex-wrap gap-2 items-center animate-fade-in">
                   <span className="text-xs text-gray-500 font-medium">適用中のフィルター:</span>
-                  {selectedFilters.documentType && (
+                  {mode === 'spec' && (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-gradient-to-r from-purple-100 to-purple-50 text-purple-700 rounded-full border border-purple-200 shadow-sm">
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      仕様確認モード: D資料固定
+                    </span>
+                  )}
+                  {selectedFilters.documentType && mode !== 'spec' && (
                     <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-gradient-to-r from-blue-100 to-blue-50 text-blue-700 rounded-full border border-blue-200 shadow-sm">
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
