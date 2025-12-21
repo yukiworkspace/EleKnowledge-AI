@@ -67,7 +67,7 @@ def save_message_to_dynamodb(session_id: str, user_id: str, role: str, content: 
     return message_id
 
 
-def query_knowledge_base(query: str, filters: dict = None) -> dict:
+def query_knowledge_base(query: str, filters: dict = None, number_of_results: int = 10) -> dict:
     """
     Query Knowledge Base with optional metadata filters
     
@@ -84,7 +84,7 @@ def query_knowledge_base(query: str, filters: dict = None) -> dict:
     try:
         retrieval_config = {
             'vectorSearchConfiguration': {
-                'numberOfResults': 10
+                'numberOfResults': number_of_results
             }
         }
         
@@ -146,7 +146,8 @@ def generate_response_with_claude(query: str, kb_results: dict, chat_history: li
     try:
         # Extract search results
         search_results = ""
-        for result in kb_results.get('retrievalResults', [])[:10]:
+        # Use all retrieved results (caller controls number_of_results)
+        for result in kb_results.get('retrievalResults', []):
             content = result['content']['text']
             metadata = result.get('metadata', {})
             doc_uri = metadata.get('x-amz-bedrock-kb-source-uri', '')
@@ -195,13 +196,15 @@ def generate_response_with_claude(query: str, kb_results: dict, chat_history: li
         # Build messages: references -> history -> current question
         messages = []
         
-        # Add references block if search results exist
+        # Add references block (even if empty) to make model aware of search result status
         if search_results.strip():
             references_block = f"<references>\n{search_results}\n</references>"
-            messages.append({
-                "role": "user",
-                "content": references_block
-            })
+        else:
+            references_block = "<references>\n[検索結果] D資料の検索結果が0件でした（検索漏れの可能性があります）。\n</references>"
+        messages.append({
+            "role": "user",
+            "content": references_block
+        })
 
         if chat_history:
             # keep chronological order; chat_history is oldest-first (already limited to 5 in lambda_handler)
@@ -379,13 +382,16 @@ def lambda_handler(event, context):
         
         # Enforce D資料 when in spec (specification) mode
         if mode == 'spec':
-            filters = {
-                **filters,
+            # Ignore product/model to avoid over-filtering; focus on D資料のみ
+            spec_filters = {
                 'documentType': 'D資料'
             }
-        
-        # Query Knowledge Base
-        kb_results = query_knowledge_base(query, filters)
+            # Try with expanded results; fallback with larger k if empty
+            kb_results = query_knowledge_base(query, spec_filters, number_of_results=30)
+            if not kb_results.get('retrievalResults'):
+                kb_results = query_knowledge_base(query, spec_filters, number_of_results=50)
+        else:
+            kb_results = query_knowledge_base(query, filters, number_of_results=10)
         
         # Generate response with Claude 4
         ai_response = generate_response_with_claude(query, kb_results, chat_history, mode)

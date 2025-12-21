@@ -626,9 +626,6 @@ export default function ChatPage() {
                 <div>
                   <label className="block text-xs text-gray-600 mb-1 flex items-center gap-2">
                     <span>モード</span>
-                    <span className="text-[10px] text-blue-600 font-semibold bg-blue-50 px-1.5 py-0.5 rounded-full border border-blue-200">
-                      仕様確認モードはD資料のみ検索
-                    </span>
                   </label>
                   <select
                     value={mode}
@@ -636,7 +633,7 @@ export default function ChatPage() {
                     className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white hover:border-gray-400 text-gray-900"
                   >
                     <option value="normal">通常モード</option>
-                    <option value="spec">仕様確認モード（D資料のみ）</option>
+                    <option value="spec">仕様確認モード</option>
                   </select>
                 </div>
                 <div>
@@ -661,7 +658,7 @@ export default function ChatPage() {
                     ))}
                   </select>
                   {mode === 'spec' && (
-                    <p className="text-[11px] text-gray-500 mt-1">仕様確認モードでは自動でD資料に固定します。</p>
+                    <p className="text-[11px] text-gray-500 mt-1">仕様確認モードでは資料タイプは固定です。</p>
                   )}
                 </div>
                 <div className="flex gap-2">
@@ -1052,7 +1049,7 @@ export default function ChatPage() {
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
-                      仕様確認モード: D資料固定
+                      仕様確認モード
                     </span>
                   )}
                   {selectedFilters.documentType && mode !== 'spec' && (
