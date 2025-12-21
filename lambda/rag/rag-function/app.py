@@ -144,10 +144,33 @@ def generate_response_with_claude(query: str, kb_results: dict, chat_history: li
         str: Generated response
     """
     try:
-        # Extract search results
+        # Extract search results with relevance filtering
         search_results = ""
-        # Use all retrieved results (caller controls number_of_results)
-        for result in kb_results.get('retrievalResults', []):
+        retrieval_results = kb_results.get('retrievalResults', [])
+        
+        # Filter by relevance score and limit by mode
+        # 仕様確認モードでは関連性スコアの閾値を下げて、より多くの資料を含める
+        filtered_results = []
+        for result in retrieval_results:
+            score = result.get('score', 0.0)
+            if mode == "spec":
+                # 仕様確認モード: スコア0.2以上を採用（より広く検索）
+                if score >= 0.2:
+                    filtered_results.append(result)
+            else:
+                # 通常モード: スコア0.3以上を採用
+                if score >= 0.3:
+                    filtered_results.append(result)
+        
+        # モード別に件数制限（仕様確認モードでは多めに）
+        if mode == "spec":
+            # 仕様確認モード: 上位30件まで（参考資料の中身を探しきるため）
+            filtered_results = filtered_results[:30]
+        else:
+            # 通常モード: 上位10件まで
+            filtered_results = filtered_results[:10]
+        
+        for result in filtered_results:
             content = result['content']['text']
             metadata = result.get('metadata', {})
             doc_uri = metadata.get('x-amz-bedrock-kb-source-uri', '')
@@ -160,6 +183,12 @@ def generate_response_with_claude(query: str, kb_results: dict, chat_history: li
         # Build system prompt (rules only, no documents or history)
         if mode == "spec":
             system_prompt = """あなたはエレベーター仕様（D資料）に基づく「仕様確認」アシスタントです。参照資料に書かれている内容だけで回答してください。
+
+【最重要ルール：参照資料の確認】
+- 回答する前に、提供された参照資料を**全て丁寧に読み、質問に関連する情報を探してください**
+- 参照資料が複数の資料から構成されている場合、**全ての資料を確認**してください
+- 質問のキーワードや関連する用語（略称・正式名称・類義語）で**全ての参照資料を検索**してください
+- 「資料に記載がありません」と答えるのは、**全ての参照資料を確認した後**にしてください
 
 【最優先ルール】
 - 参照資料にないことは推測しない。「資料に記載がありません」と書く。
